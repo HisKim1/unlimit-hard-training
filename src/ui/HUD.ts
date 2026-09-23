@@ -53,13 +53,13 @@ export class HUD {
     // 진행도 칩
     if (wod) {
       const n = wod.requirements.length;
-      const chipW = Math.min(170, (W - 24) / n);
+      const chipW = (W - 24) / n;
       wod.requirements.forEach((r, i) => {
         const cx = 12 + chipW * i + 8;
         const ref = imageRef(scene, EQUIPMENT[r.equipment].icon);
         const icon = scene.add.image(cx + 20, 88, ref.key, ref.frame).setDepth(DEPTH.hud);
         icon.setScale(40 / Math.max(icon.width, icon.height));
-        const text = scene.add.text(cx + 46, 88, '', { fontFamily: FONT, fontSize: '28px', color: '#ffffff' })
+        const text = scene.add.text(cx + 46, 82, '', { fontFamily: FONT, fontSize: '22px', color: '#ffffff', lineSpacing: 0 })
           .setOrigin(0, 0.5).setDepth(DEPTH.hud);
         const check = scene.add.text(cx + 34, 74, '✔', { fontFamily: FONT, fontSize: '22px', color: '#3ddc84' })
           .setOrigin(0.5).setDepth(DEPTH.hud).setVisible(false);
@@ -100,7 +100,7 @@ export class HUD {
       const eq = c.eq as keyof typeof EQUIPMENT;
       const req = this.progress.required(eq);
       const done = this.progress.done.get(eq) ?? 0;
-      c.text.setText(`${done}/${req}`);
+      c.text.setText(`${EQUIPMENT[eq].name}\n${done}/${req}`);
       const full = done >= req;
       c.text.setColor(full ? '#3ddc84' : '#ffffff');
       c.check.setVisible(full);

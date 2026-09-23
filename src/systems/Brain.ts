@@ -57,8 +57,11 @@ export class Brain {
   private stateTimerMs = 0;
   private poseSwapInMs = 0;
   private listeners: ((e: BrainEvent) => void)[] = [];
-  private buffStarted: Record<BuffId, number> = { chalk: -Infinity, bong: -Infinity, heo: -Infinity };
+  private buffStarted: Record<BuffId, number> = { chalk: -Infinity, bong: -Infinity, heo: -Infinity, jong: -Infinity };
   private heoProdSec = 0;
+  private lastCheerMs = -Infinity;
+  private cheerPending = false;
+  private floorCheered = false;
 
   constructor(
     private readonly world: BrainWorld,
@@ -106,6 +109,7 @@ export class Brain {
     const { PROD_REQUIRED_MIN: lo, PROD_REQUIRED_MAX: hi } = this.cfg;
     this.prodTarget = lo + Math.floor(this.rnd() * (hi - lo + 1));
     this.prodTarget = Math.min(hi, Math.max(lo, this.prodTarget));
+    if (this.floorCheered) this.prodTarget = Math.max(1, this.prodTarget - this.cfg.CHEER_PROD_REDUCTION);
     this.prodCount = 0;
   }
 
@@ -124,6 +128,8 @@ export class Brain {
   private enterExhausted(): void {
     this.targetId = null;
     this.sessionProgress = 0;
+    this.floorCheered = this.cheerPending;
+    this.cheerPending = false;
     this.newProdTarget();
     this.setState('EXHAUSTED');
     this.setTier('base', true);
@@ -153,6 +159,27 @@ export class Brain {
       this.newProdTarget();
       this.setTier('base', true);
     }
+  }
+
+  /** 응원은 5초 쿨타임, 다음 바닥 회복 한 번만 보조한다. */
+  get cheerCooldown(): number {
+    return Math.max(0, this.cfg.CHEER_COOLDOWN_SEC - (this.clockMs - this.lastCheerMs) / 1000);
+  }
+
+  cheer(): boolean {
+    if (this.state === 'FAINTED' || this.state === 'CELEBRATING' || this.cheerCooldown > 0) return false;
+    this.lastCheerMs = this.clockMs;
+    this.addBurnout(-this.cfg.CHEER_MENTAL_RECOVERY);
+    if (this.state === 'EXHAUSTED') {
+      if (!this.floorCheered) {
+        this.floorCheered = true;
+        this.prodTarget = Math.max(1, this.prodTarget - this.cfg.CHEER_PROD_REDUCTION);
+        if (this.prodCount >= this.prodTarget) this.setState('GETTING_UP');
+      }
+    } else {
+      this.cheerPending = true;
+    }
+    return true;
   }
 
   /** 재촉하기. 쿨타임 중이면 false (입력 무시) */
@@ -256,7 +283,7 @@ export class Brain {
   }
 
   buffRemaining(id: BuffId): number {
-    return Math.max(0, this.cfg.BUFF_DURATION_SEC - (this.clockMs - this.buffStarted[id]) / 1000);
+    return Math.max(0, (id === 'jong' ? this.cfg.JONG_DURATION_SEC : this.cfg.BUFF_DURATION_SEC) - (this.clockMs - this.buffStarted[id]) / 1000);
   }
 
   buffCooldown(id: BuffId): number {
@@ -285,6 +312,7 @@ export class Brain {
     const chalkSec = Math.min(dtSec, this.buffRemaining('chalk'));
     const bongSec = Math.min(dtSec, this.buffRemaining('bong'));
     const heoSec = Math.min(dtSec, this.buffRemaining('heo'));
+    const jongSec = Math.min(dtSec, this.buffRemaining('jong'));
     const dtMs = dtSec * 1000;
     this.clockMs += dtMs;
     this.stateTimerMs += dtMs;
@@ -301,7 +329,7 @@ export class Brain {
         this.state === 'EXHAUSTED' ? c.BURNOUT_DECAY.EXHAUSTED
           : this.state === 'IDLE_REELS' ? c.BURNOUT_DECAY.IDLE_REELS
             : c.BURNOUT_DECAY.DEFAULT;
-      this.burnout = Math.max(0, this.burnout - decay * dtSec);
+      this.burnout = Math.max(0, this.burnout - decay * (dtSec + jongSec * (c.JONG_RECOVERY_MULT - 1)));
     }
 
     switch (this.state) {

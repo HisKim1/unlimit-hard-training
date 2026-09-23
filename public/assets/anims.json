@@ -557,6 +557,71 @@
    "originY": 0.9153,
    "width": 154,
    "height": 256
+  },
+  "coach_jong_front": {
+   "frames": [
+    "coach_jong_front_00",
+    "coach_jong_front_01",
+    "coach_jong_front_02",
+    "coach_jong_front_03",
+    "coach_jong_front_04"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.943,
+   "width": 150,
+   "height": 259
+  },
+  "coach_jong_side": {
+   "frames": [
+    "coach_jong_side_00",
+    "coach_jong_side_01",
+    "coach_jong_side_02",
+    "coach_jong_side_03",
+    "coach_jong_side_04",
+    "coach_jong_side_05"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.928,
+   "width": 154,
+   "height": 260
+  },
+  "coach_jong_diagonal": {
+   "frames": [
+    "coach_jong_diagonal_00",
+    "coach_jong_diagonal_01",
+    "coach_jong_diagonal_02",
+    "coach_jong_diagonal_03",
+    "coach_jong_diagonal_04",
+    "coach_jong_diagonal_05"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9434,
+   "width": 154,
+   "height": 257
+  },
+  "coach_jong_back": {
+   "frames": [
+    "coach_jong_back_00",
+    "coach_jong_back_01",
+    "coach_jong_back_02",
+    "coach_jong_back_03"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9421,
+   "width": 155,
+   "height": 258
   }
  },
  "images": {
@@ -685,6 +750,12 @@
    "originY": 1.0,
    "width": 92,
    "height": 83
+  },
+  "icon_jong": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 93,
+   "height": 112
   },
   "icon_jumprope": {
    "originX": 0.5,

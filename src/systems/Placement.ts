@@ -20,6 +20,9 @@ export function pointInPolygon(p: Point, poly: readonly Point[]): boolean {
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     const a = poly[i];
     const b = poly[j];
+    const cross = (p.x - a.x) * (b.y - a.y) - (p.y - a.y) * (b.x - a.x);
+    if (Math.abs(cross) < 1e-6 && p.x >= Math.min(a.x, b.x) && p.x <= Math.max(a.x, b.x)
+      && p.y >= Math.min(a.y, b.y) && p.y <= Math.max(a.y, b.y)) return true;
     if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
   }
   return inside;
@@ -61,13 +64,21 @@ export function evaluatePlacement(
     const pts = slotPoints(zone);
     let best = -1;
     let bestD = Infinity;
+    let free = -1;
+    let freeD = Infinity;
     pts.forEach((s, i) => {
       const d = Math.hypot(s.x - p.x, s.y - p.y);
       if (d < bestD) {
         bestD = d;
         best = i;
       }
+      if (d <= CONFIG.SLOT_SNAP_RADIUS_PX && d < freeD
+        && !placed.some(e => e.zone === zone && e.slot === i) && !overlapsAny(type, s, placed, wonjang)) {
+        free = i;
+        freeD = d;
+      }
     });
+    if (free >= 0) return { ok: true, pos: pts[free], slot: free };
     if (best < 0 || bestD > CONFIG.SLOT_SNAP_RADIUS_PX) return { ok: false, pos: p, reason: 'outside' };
     const pos = pts[best];
     const taken = placed.some((e) => e.zone === zone && e.slot === best);
@@ -82,7 +93,17 @@ export function evaluatePlacement(
     if (!pointInPolygon(p, CONFIG.FLOOR_POLYGON)) return { ok: false, pos: p, reason: 'outside' };
     const floorCount = placed.filter((e) => e.zone === 'floor').length;
     if (floorCount >= CONFIG.MAX_FLOOR_EQUIPMENT) return { ok: false, pos: p, reason: 'full' };
-    if (overlapsAny(type, p, placed, wonjang)) return { ok: false, pos: p, reason: 'overlap' };
+    if (overlapsAny(type, p, placed, wonjang)) {
+      // 가까운 빈자리로만 보정. 멀리 떨어뜨리거나 겹쳐 놓지는 않는다.
+      for (let radius = 16; radius <= 96; radius += 16) {
+        for (let i = 0; i < 16; i++) {
+          const angle = i * Math.PI / 8;
+          const pos = { x: p.x + Math.cos(angle) * radius, y: p.y + Math.sin(angle) * radius };
+          if (pointInPolygon(pos, CONFIG.FLOOR_POLYGON) && !overlapsAny(type, pos, placed, wonjang)) return { ok: true, pos, slot: -1 };
+        }
+      }
+      return { ok: false, pos: p, reason: 'overlap' };
+    }
     return { ok: true, pos: p, slot: -1 };
   }
   return { ok: false, pos: p, reason: 'outside' };

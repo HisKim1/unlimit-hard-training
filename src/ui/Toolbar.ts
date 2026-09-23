@@ -22,7 +22,6 @@ export interface ToolbarCallbacks {
   onDragStart(id: ToolbarId, pointer: Phaser.Input.Pointer): void;
   onTap?(id: ToolbarId): void;
   onTabChange?(): void;
-  onUpcoming?(): void;
 }
 
 const PAD = 14;
@@ -32,9 +31,10 @@ export class Toolbar {
   private items: Item[] = [];
   private scroll = 0;
   private vel = 0;
+  private guidePhase = 0;
+  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   private minScroll = 0;
   private tabs: Phaser.GameObjects.Text[] = [];
-  private upcoming!: Phaser.GameObjects.Container;
   /** 일시정지 등에서 입력을 막는다 */
   private _enabled = true;
   get enabled(): boolean { return this._enabled; }
@@ -91,18 +91,13 @@ export class Toolbar {
       if (isBuff(id)) {
         item.badge = scene.add.text(0, 47, BUFFS[id].hint, { fontFamily: FONT, fontSize: '16px', color: '#8fe6c2' }).setOrigin(0.5);
         box.add(item.badge);
+      } else {
+        item.badge = scene.add.text(0, 47, '필요', { fontFamily: FONT, fontSize: '16px', color: '#ffc53d' }).setOrigin(0.5).setVisible(false);
+        box.add(item.badge);
       }
       this.drawItem(item);
       this.items.push(item);
     });
-    const upcomingBg = scene.add.rectangle(0, 0, iw - 12, itemH - 12, COLORS.toolbarItemDisabled);
-    const question = scene.add.text(0, -18, '?', { fontFamily: FONT, fontSize: '52px', color: '#9da8b5' }).setOrigin(0.5);
-    const upcomingLabel = scene.add.text(0, 26, '종코', { fontFamily: FONT, fontSize: '19px', color: '#e8eef5' }).setOrigin(0.5);
-    const upcomingBadge = scene.add.text(0, 47, '업데이트 예정', { fontFamily: FONT, fontSize: '16px', color: '#9da8b5' }).setOrigin(0.5);
-    this.upcoming = scene.add.container(PAD + iw / 2 + BUFF_ORDER.length * iw, tabH + itemH / 2,
-      [upcomingBg, question, upcomingLabel, upcomingBadge]).setSize(iw - 12, itemH - 12).setInteractive({ useHandCursor: true });
-    this.upcoming.on('pointerup', () => { if (this.enabled) this.cb.onUpcoming?.(); });
-    this.root.add(this.upcoming);
     this.selectTab('equipment');
 
     scene.input.on(Phaser.Input.Events.POINTER_DOWN, this.onDown, this);
@@ -136,7 +131,6 @@ export class Toolbar {
   }
 
   selectTab(tab: 'equipment' | 'buffs'): void {
-    this.upcoming.setVisible(tab === 'buffs');
     this.active = null;
     this.scroll = 0;
     this.vel = 0;
@@ -163,6 +157,9 @@ export class Toolbar {
   setHighlighted(ids: EquipmentId[]): void {
     for (const it of this.items) {
       it.highlight = !isBuff(it.id) && ids.includes(it.id);
+      if (!isBuff(it.id)) it.badge?.setVisible(it.highlight);
+      it.bg.setAlpha(1);
+      it.icon.setY(-14);
       this.drawItem(it);
     }
   }
@@ -206,15 +203,16 @@ export class Toolbar {
     if (!a || a.pointerId !== p.id || !p.isDown) return;
     const dx = p.x - a.startX;
     const dy = p.y - a.startY;
+    if (Math.hypot(dx, dy) >= CONFIG.DRAG_START_PX && a.item?.enabled
+      && (p.y < CONFIG.TOOLBAR_TOP - 12 || (a.mode === 'pending' && -dy > Math.abs(dx) * 0.6))) {
+      const id = a.item.id;
+      this.active = null;
+      this.vel = 0;
+      this.cb.onDragStart(id, p);
+      return;
+    }
     if (a.mode === 'pending') {
       if (Math.hypot(dx, dy) < CONFIG.DRAG_START_PX) return;
-      // 수직(위쪽) 성분이 수평 성분보다 크면 기구 드래그, 아니면 스크롤
-      if (-dy > Math.abs(dx) && a.item && a.item.enabled) {
-        const id = a.item.id;
-        this.active = null;
-        this.cb.onDragStart(id, p);
-        return;
-      }
       a.mode = 'scroll';
     }
     const now = p.moveTime || this.scene.time.now;
@@ -240,6 +238,13 @@ export class Toolbar {
   }
 
   update(dtSec: number): void {
+    this.guidePhase += dtSec * 3;
+    const reducedMotion = this.reducedMotion.matches;
+    for (const it of this.items) {
+      if (!it.highlight || !it.box.visible) continue;
+      it.bg.setAlpha(reducedMotion ? 1 : 0.8 + 0.2 * Math.sin(this.guidePhase));
+      it.icon.setY(-14 - (reducedMotion ? 0 : 3 * (1 + Math.sin(this.guidePhase))));
+    }
     if (this.active?.mode === 'scroll') return;
     let changed = false;
     if (Math.abs(this.vel) > 5) {

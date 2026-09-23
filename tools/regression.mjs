@@ -13,6 +13,14 @@ try {
   page.on('response', r => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
   await page.goto(process.env.URL || 'http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
   await page.waitForFunction(() => window.__game?.scene.isActive('Title'));
+  const logo = await page.evaluate(() => {
+    const s = window.__game.scene.getScene('Title');
+    const logo = s.children.list.find(o => o.texture?.key === 'unlimit_logo');
+    const b = logo?.getBounds();
+    return b ? { top: b.top, bottom: b.bottom, width: b.width, height: b.height, ratio: logo.width / logo.height } : null;
+  });
+  assert.ok(logo && logo.top > 0 && logo.bottom < 194, 'brand logo above title without overlap');
+  assert.ok(Math.abs(logo.width / logo.height - logo.ratio) < 0.001, 'original logo aspect ratio');
   await page.screenshot({ path: 'artifacts/title.png' });
   const assets = await page.evaluate(async () => {
     const m = await (await fetch('assets/anims.json')).json();
@@ -47,6 +55,57 @@ try {
   }
   await start();
   await page.screenshot({ path: 'artifacts/game.png' });
+  for (let level = 1; level <= 8; level++) {
+    await start(level);
+    const guide = await page.evaluate(() => {
+      const s = window.__game.scene.getScene('Game');
+      return { requirements: s.wod.requirements.map(r => r.equipment), highlighted: s.toolbar.items.filter(i => i.highlight).map(i => i.id),
+        chips: s.hud.chips.map(c => ({ text: c.text.text, left: c.text.getBounds().left, right: c.text.getBounds().right, bottom: c.text.getBounds().bottom })) };
+    });
+    assert.deepEqual([...guide.highlighted].sort(), [...guide.requirements].sort());
+    guide.chips.forEach((c, i) => {
+      assert.match(c.text, /\S+\n0\/\d+/);
+      assert.ok(c.bottom <= 114 && c.left >= 0 && c.right <= 720, `level ${level}: ${JSON.stringify(c)}`);
+      if (i) assert.ok(guide.chips[i - 1].right < c.left, 'requirement labels do not overlap');
+    });
+    if (level === 4) await page.screenshot({ path: 'artifacts/wod-guide-three.png' });
+  }
+  await start();
+  await page.evaluate(() => {
+    const s = window.__game.scene.getScene('Game');
+    s.progress.done.set('barbell', 2);
+    s.place('barbell', { x: 150, y: 900 }, -1);
+    s.completeSession(s.equipment[0].id);
+  });
+  assert.deepEqual(await page.evaluate(() => {
+    const s = window.__game.scene.getScene('Game');
+    return { highlighted: s.toolbar.items.filter(i => i.highlight).map(i => i.id), done: s.hud.chips[0].text.text, checked: s.hud.chips[0].check.visible,
+      badge: s.toolbar.items.find(i => i.id === 'barbell').badge.visible };
+  }), { highlighted: ['pullup'], done: '바벨\n3/3', checked: true, badge: false });
+  await page.screenshot({ path: 'artifacts/wod-guide-completed.png' });
+  console.log('PASS all WOD names/counts fit, needed-only highlights, completed highlight clears');
+  await start();
+  await pointer(76, 1205);
+  await page.mouse.down();
+  await pointer(150, 730);
+  await page.mouse.up();
+  assert.equal(await page.evaluate(() => window.__game.scene.getScene('Game').equipment.length), 1, 'finger inside upper green floor drops successfully');
+  await page.waitForTimeout(300);
+  await pointer(76, 1205);
+  await page.mouse.down();
+  await pointer(270, 1185); // horizontal first, then lift into floor
+  await pointer(150, 730); // occupied spot: snap nearby
+  await page.waitForTimeout(100);
+  const preview = await page.evaluate(() => {
+    const d = window.__game.scene.getScene('Game').drag;
+    return d && { valid: d.valid, pos: d.pos, ghost: { x: d.ghost.x, y: d.ghost.y } };
+  });
+  assert.ok(preview?.valid);
+  assert.deepEqual(preview.pos, preview.ghost);
+  await page.screenshot({ path: 'artifacts/placement-snap.png' });
+  await page.mouse.up();
+  assert.equal(await page.evaluate(() => window.__game.scene.getScene('Game').equipment.length), 2, 'diagonal drag recovers from scroll and avoids overlap');
+  console.log('PASS finger-based drop, diagonal drag, nearby free-space snap and matching preview');
   for (const type of ['pullup', 'rings', 'rower', 'bike', 'mat']) {
     await start(type === 'mat' ? 3 : 1);
     const motion = await page.evaluate(type => {
@@ -140,17 +199,11 @@ try {
   await pointer(540, 1142);
   await page.mouse.down();
   await page.mouse.up();
-  assert.deepEqual(await page.evaluate(() => window.__game.scene.getScene('Game').toolbar.items.filter(i => i.box.visible).map(i => i.id)), ['chalk', 'bong', 'heo']);
+  assert.deepEqual(await page.evaluate(() => window.__game.scene.getScene('Game').toolbar.items.filter(i => i.box.visible).map(i => i.id)), ['chalk', 'bong', 'heo', 'jong']);
   await pointer(448, 1205);
   await page.mouse.down();
   await page.mouse.up();
-  assert.equal(await page.evaluate(() => window.__game.scene.getScene('Game').toast.text.text), '업데이트 예정입니다!\n종코: 5초간 원장님의 멘탈 회복 속도 증가');
-  await pointer(448, 1205);
-  await page.mouse.down();
-  await pointer(448, 940);
-  await page.mouse.up();
-  assert.equal(await page.evaluate(() => window.__game.scene.getScene('Game').drag), null);
-  await page.screenshot({ path: 'artifacts/jong-upcoming.png' });
+  assert.match(await page.evaluate(() => window.__game.scene.getScene('Game').toast.text.text), /종코 5초/);
   await pointer(200, 1205);
   await page.mouse.down();
   await pointer(200, 1090);
@@ -196,6 +249,49 @@ try {
   await page.screenshot({ path: 'artifacts/buff-departed.png' });
   await page.waitForFunction(() => window.__game.scene.getScene('Game').toolbar.isEnabled('bong'), { timeout: 12000 });
   console.log('PASS buff tab, real coach drag, arrival/departure, 2s effect, independent 10s cooldown, pause');
+
+  await page.evaluate(() => { window.__game.scene.getScene('Game').brain.burnout = 60; });
+  await pointer(448, 1205); await page.mouse.down();
+  await pointer(448, 1090); await pointer(180, 940); await page.mouse.up();
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').coaches.some(c => c.id === 'jong'));
+  const jong = await page.evaluate(() => {
+    const s = window.__game.scene.getScene('Game');
+    const c = s.coaches.find(c => c.id === 'jong');
+    return { anim: c.sprite.anims.currentAnim.key, remaining: s.brain.buffRemaining('jong'), cd: s.brain.buffCooldown('jong'), duplicate: s.brain.applyBuff('jong'), message: s.toast.text.text };
+  });
+  assert.match(jong.anim, /^coach_jong_/); assert.match(jong.message, /^종코:/);
+  assert.ok(jong.remaining > 4 && jong.remaining <= 5 && jong.cd > 9);
+  assert.equal(jong.duplicate, false);
+  await page.screenshot({ path: 'artifacts/jong-active.png' });
+  await page.evaluate(() => window.__game.scene.getScene('Game').setPaused(true));
+  const jongFrozen = await page.evaluate(() => window.__game.scene.getScene('Game').brain.buffRemaining('jong'));
+  await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(() => window.__game.scene.getScene('Game').brain.buffRemaining('jong')), jongFrozen);
+  await page.evaluate(() => window.__game.scene.getScene('Game').setPaused(false));
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').brain.buffRemaining('jong') === 0);
+  assert.ok(await page.evaluate(() => window.__game.scene.getScene('Game').brain.buffCooldown('jong') > 0));
+  await page.waitForFunction(() => !window.__game.scene.getScene('Game').coaches.some(c => c.id === 'jong'));
+  console.log('PASS Jong real drag, animated sprite, 5s effect, 10s cooldown, pause and exit');
+
+  const movement = await page.evaluate(() => {
+    const s = window.__game.scene.getScene('Game');
+    s.brain.pos = { x: 360, y: 850 };
+    for (const id of ['bong', 'heo', 'jong']) s.showBuff(id, { x: 360, y: 850 });
+    const [bong, heo, jong] = s.coaches;
+    bong.target = { x: 600, y: 850 };
+    bong.update(0.1);
+    const bongSpeed = (bong.sprite.x - 360) / 0.1;
+    heo.update(1); jong.update(1);
+    const near = [heo.sprite.x, jong.sprite.x];
+    s.brain.pos = { x: 420, y: 900 };
+    heo.update(1); jong.update(1);
+    return { bongSpeed, near, followed: [heo.sprite.x, heo.sprite.y, jong.sprite.x, jong.sprite.y] };
+  });
+  assert.equal(movement.bongSpeed, 90);
+  assert.deepEqual(movement.near, [270, 450]);
+  assert.deepEqual(movement.followed, [330, 885, 510, 885]);
+  await page.screenshot({ path: 'artifacts/coaches-follow.png' });
+  console.log('PASS slower Bong roaming and Heo/Jong following both sides of Wonjang');
 
   await start();
   const clear = await page.evaluate(() => {

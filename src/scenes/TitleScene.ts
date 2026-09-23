@@ -13,10 +13,15 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    audio.setMusic('menu');
     const W = CONFIG.logicalWidth;
     const H = CONFIG.logicalHeight;
     this.add.image(0, 0, 'box_bg').setOrigin(0).setDisplaySize(W, H);
     this.add.rectangle(0, 0, W, H, 0x000000, 0.35).setOrigin(0);
+    if (this.textures.exists('unlimit_logo')) {
+      const logo = this.add.image(W / 2, 98, 'unlimit_logo');
+      logo.setScale(190 / logo.width);
+    }
 
     const title = this.add.text(W / 2, 250, STR.title, {
       fontFamily: FONT, fontSize: '96px', color: '#ffffff', stroke: '#1f5fd6', strokeThickness: 16,

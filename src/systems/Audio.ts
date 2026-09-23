@@ -1,7 +1,8 @@
-// 효과음: Web Audio 코드 합성 (SPEC 11장). 외부 음원 없음.
+// 효과음: Web Audio 합성. BGM 출처/CC0: public/audio/CREDITS.md.
 // 나중에 파일로 바꿀 수 있게 키 기반 레지스트리로 둔다: register(key, fn).
 
 type SoundFn = (ctx: AudioContext, out: AudioNode, t: number) => void;
+type Music = 'menu' | 'workout';
 
 class AudioSystem {
   private ctx: AudioContext | null = null;
@@ -9,6 +10,80 @@ class AudioSystem {
   private noise: AudioBuffer | null = null;
   private sounds = new Map<string, SoundFn>();
   private _muted = false;
+  private music: Music | null = null;
+  private musicPaused = false;
+  private musicSource: AudioBufferSourceNode | null = null;
+  private musicGain: GainNode | null = null;
+  private musicOffset = 0;
+  private musicStarted = 0;
+  private musicBuffers = new Map<Music, Promise<AudioBuffer>>();
+
+  get musicState() {
+    return { track: this.music, paused: this.musicPaused, playing: !!this.musicSource && this.ctx?.state === 'running', muted: this._muted,
+      offset: this.musicOffset + (this.musicSource && this.ctx ? this.ctx.currentTime - this.musicStarted : 0) };
+  }
+
+  setMusic(track: Music | null): void {
+    if (track !== this.music) {
+      this.stopMusicSource();
+      this.musicOffset = 0;
+      this.music = track;
+    }
+    this.musicPaused = false;
+    void this.startMusicSource();
+  }
+
+  pauseMusic(paused: boolean): void {
+    this.musicPaused = paused;
+    if (paused) this.stopMusicSource();
+    else void this.startMusicSource();
+  }
+
+  private stopMusicSource(): void {
+    const source = this.musicSource;
+    const gain = this.musicGain;
+    if (!source || !gain || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    this.musicOffset = (this.musicOffset + now - this.musicStarted) % source.buffer!.duration;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.15);
+    source.stop(now + 0.16);
+    source.onended = () => { source.disconnect(); gain.disconnect(); };
+    this.musicSource = null;
+    this.musicGain = null;
+  }
+
+  private async startMusicSource(): Promise<void> {
+    const ctx = this.ctx, track = this.music;
+    if (!ctx || !this.master || !track || this.musicPaused || this.musicSource) return;
+    try {
+      let pending = this.musicBuffers.get(track);
+      if (!pending) {
+        pending = fetch(`audio/${track}.mp3`).then(r => {
+          if (!r.ok) throw new Error(`BGM HTTP ${r.status}`);
+          return r.arrayBuffer();
+        }).then(data => ctx.decodeAudioData(data));
+        this.musicBuffers.set(track, pending);
+      }
+      const buffer = await pending;
+      // 로딩 중 씬 전환·일시정지가 발생해도 이전 곡을 시작하지 않는다.
+      if (this.music !== track || this.musicPaused || this.musicSource) return;
+      const source = ctx.createBufferSource(), gain = ctx.createGain();
+      source.buffer = buffer;
+      source.loop = true;
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(track === 'menu' ? 0.14 : 0.22, ctx.currentTime + 0.45);
+      source.connect(gain).connect(this.master);
+      this.musicOffset %= buffer.duration;
+      this.musicStarted = ctx.currentTime;
+      source.start(0, this.musicOffset);
+      this.musicSource = source;
+      this.musicGain = gain;
+    } catch {
+      this.musicBuffers.delete(track); // 다음 사용자 입력에서 재시도. 음원 실패는 게임을 막지 않는다.
+    }
+  }
 
   constructor() {
     this.register('slap', (ctx, out, t) => {
@@ -211,6 +286,7 @@ class AudioSystem {
         this.master.connect(this.ctx.destination);
         this.noise = this.makeNoise(this.ctx);
       }
+      void this.startMusicSource();
       if (this.ctx.state === 'running') return;
       void this.ctx.resume();
       // 무음 버퍼를 한 번 재생해서 iOS 오디오 경로를 연다

@@ -86,16 +86,16 @@ describe('Brain 상태 기계 (SPEC 5장)', () => {
     expect(brain.prodTarget).toBe(10);
   });
 
-  it('쿨타임 0.2초 중 입력은 무시', () => {
+  it('쿨타임 0.1초 중 입력은 무시', () => {
     const { brain, eq } = setup({ rnd: () => 0 });
     eq.push({ id: 1, usePoint: { x: 10, y: 0 } });
     brain.onEquipmentPlaced();
     run(brain, 2);
     expect(brain.prod()).toBe(true);
     expect(brain.prod()).toBe(false);
-    run(brain, 0.1);
+    run(brain, 0.05);
     expect(brain.prod()).toBe(false);
-    run(brain, 0.15);
+    run(brain, 0.06);
     expect(brain.prod()).toBe(true);
     expect(brain.prodCount).toBe(2);
   });
@@ -113,6 +113,66 @@ describe('Brain 상태 기계 (SPEC 5장)', () => {
 });
 
 describe('재촉 + 번아웃 (SPEC 6장)', () => {
+  it('종코는 5초만 멘탈 자연 회복 2배, 다른 버프와 독립된 10초 쿨타임', () => {
+    for (const state of ['IDLE_REELS', 'EXHAUSTED', 'EXERCISING'] as const) {
+      const brain = new Brain({ candidates: () => [], sessionDurationSec: () => 1000 }, { x: 0, y: 0 });
+      brain.state = state; brain.targetId = 1; brain.burnout = 90;
+      const decay = state === 'EXHAUSTED' ? 5 : state === 'IDLE_REELS' ? 3 : 1;
+      expect(brain.applyBuff('jong')).toBe(true);
+      expect(brain.applyBuff('jong')).toBe(false);
+      expect(brain.buffCooldown('heo')).toBe(0);
+      brain.update(5.5);
+      expect(brain.burnout).toBeCloseTo(90 - decay * 10.5);
+      expect(brain.buffRemaining('jong')).toBe(0);
+      expect(brain.buffCooldown('jong')).toBe(4.5);
+      brain.update(4.49); expect(brain.applyBuff('jong')).toBe(false);
+      brain.update(0.02); expect(brain.applyBuff('jong')).toBe(true);
+      brain.state = 'FAINTED'; brain.update(10); expect(brain.applyBuff('jong')).toBe(false);
+    }
+  });
+  it('응원: 멘탈 회복, 5초 쿨타임, 다음 바닥 한 번에만 -3, 배치 초기화에도 유지', () => {
+    const { brain, eq } = setup();
+    brain.burnout = 40;
+    expect(brain.cheer()).toBe(true);
+    expect(brain.burnout).toBe(20);
+    expect(brain.cheer()).toBe(false);
+    brain.update(4.99);
+    expect(brain.cheer()).toBe(false);
+    brain.update(0.01);
+    expect(brain.cheer()).toBe(true); // 중첩 안 됨
+    expect(brain.burnout).toBe(0);
+    eq.push({ id: 1, usePoint: { x: 0, y: 0 } });
+    brain.onEquipmentPlaced();
+    run(brain, 1.2);
+    expect(brain.prodTarget).toBe(2);
+    brain.onEquipmentPlaced();
+    expect(brain.prodTarget).toBe(2);
+    brain.prod(); run(brain, 0.11); brain.prod();
+    expect(brain.state).toBe('GETTING_UP');
+    run(brain, 2);
+    expect(brain.state).toBe('EXHAUSTED');
+    expect(brain.prodTarget).toBe(5);
+  });
+
+  it('바닥 응원은 현재에 적용하고 중첩하지 않으며 종료 후 거절', () => {
+    const { brain, eq } = setup({ equipment: [{ id: 1, usePoint: { x: 0, y: 0 } }] });
+    brain.onEquipmentPlaced(); run(brain, 1.2);
+    expect(brain.cheer()).toBe(true);
+    expect(brain.prodTarget).toBe(2);
+    eq.length = 0; run(brain, 5);
+    expect(brain.cheer()).toBe(true);
+    expect(brain.prodTarget).toBe(2);
+    brain.celebrate(); run(brain, 5);
+    expect(brain.cheer()).toBe(false);
+  });
+
+  it('이미 충분히 재촉한 바닥에서 응원하면 바로 일어나기 시작', () => {
+    const { brain } = setup({ equipment: [{ id: 1, usePoint: { x: 0, y: 0 } }] });
+    brain.onEquipmentPlaced(); run(brain, 1.2);
+    brain.prod(); run(brain, 0.11); brain.prod();
+    brain.cheer();
+    expect(brain.state).toBe('GETTING_UP');
+  });
   it('운동 중 연타: 속도 증가, 번아웃 +10, 70 경고 → 100 기절 (포기 확률 0)', () => {
     const { brain, eq, events } = setup({ rnd: () => 0.99 }); // 포기 안 함
     eq.push({ id: 1, usePoint: { x: 1, y: 0 } });

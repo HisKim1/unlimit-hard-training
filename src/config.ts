@@ -7,10 +7,13 @@ export const CONFIG = {
   logicalHeight: 1280,
 
   // ---- 재촉 ----
-  PROD_COOLDOWN_MS: 200,
+  PROD_COOLDOWN_MS: 100,
   PROD_REQUIRED_MIN: 5,
   PROD_REQUIRED_MAX: 10,
   PROD_VIBRATE_MS: 15,
+  CHEER_COOLDOWN_SEC: 5,
+  CHEER_PROD_REDUCTION: 3,
+  CHEER_MENTAL_RECOVERY: 20,
   SPEED_TOAST_MIN_GAP_MS: 1500, // 연속 재촉 시 "속도를 올립니다" 토스트 최소 간격
 
   // ---- 기구 ----
@@ -51,9 +54,12 @@ export const CONFIG = {
   CHALK_EXERCISE_MULT: 2,
   BONG_WALK_MULT: 2,
   HEO_PROD_INTERVAL_SEC: 0.15,
+  JONG_DURATION_SEC: 5,
+  JONG_RECOVERY_MULT: 2,
   COACH_ROAM_SEC: 3,
   COACH_EXIT_SPEED: 100,
   COACH_WALK_SPEED: 160,
+  BONG_ROAM_SPEED: 90,
 
   // ---- 상태 연출 시간 ----
   FLOOR_POSE_SWAP_SEC: [4, 6] as [number, number],

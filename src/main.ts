@@ -48,6 +48,9 @@ async function start(): Promise<void> {
 
   // 디버그·자동 테스트용 핸들
   (window as unknown as { __game?: Phaser.Game }).__game = game;
+  (window as unknown as { render_game_to_text: () => string }).render_game_to_text = () => JSON.stringify({
+    scenes: game.scene.getScenes(true).map(s => s.scene.key), audio: audio.musicState,
+  });
 
   // 탭이 숨겨지면 게임 일시정지 + 오디오 정지, 돌아오면 "계속하기" 오버레이
   document.addEventListener('visibilitychange', () => {

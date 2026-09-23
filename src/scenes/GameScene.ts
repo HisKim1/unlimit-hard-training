@@ -56,6 +56,9 @@ export class GameScene extends Phaser.Scene {
   private view!: WonjangView;
   private fx!: Effects;
   private toast!: Toast;
+  private cheerToast!: Toast;
+  private cheerBtn!: Phaser.GameObjects.Container;
+  private cheerLabel!: Phaser.GameObjects.Text;
   private hud!: HUD;
   private toolbar!: Toolbar;
   private equipment: Equipment[] = [];
@@ -63,6 +66,8 @@ export class GameScene extends Phaser.Scene {
   private zoneGfx!: Phaser.GameObjects.Graphics;
   private debugGfx?: Phaser.GameObjects.Graphics;
   private vignette!: Phaser.GameObjects.Image;
+  private chimpVignette!: Phaser.GameObjects.Image;
+  private chimpRoll = () => Math.random();
   private prodBtn!: Phaser.GameObjects.Container;
   private prodBg!: Phaser.GameObjects.Graphics;
   private drag: Drag | null = null;
@@ -71,7 +76,7 @@ export class GameScene extends Phaser.Scene {
   private paused = false;
   private pauseLayer?: Phaser.GameObjects.Container;
   private coaches: Coach[] = [];
-  private coachVisits = { bong: 0, heo: 0 };
+  private coachVisits = { bong: 0, heo: 0, jong: 0 };
   private timeWarned = false;
   private prodPressedMs = 0;
 
@@ -89,20 +94,23 @@ export class GameScene extends Phaser.Scene {
     this.paused = false;
     this.pauseLayer = undefined;
     this.coaches = [];
-    this.coachVisits = { bong: 0, heo: 0 };
+    this.coachVisits = { bong: 0, heo: 0, jong: 0 };
     this.timeWarned = false;
   }
 
   create(): void {
+    audio.setMusic('workout');
     const W = CONFIG.logicalWidth;
     const H = CONFIG.logicalHeight;
     this.add.image(0, 0, 'box_bg').setOrigin(0).setDisplaySize(W, H).setDepth(DEPTH.bg);
     this.zoneGfx = this.add.graphics().setDepth(DEPTH.zone);
     this.vignette = this.add.image(0, 0, 'vignette').setOrigin(0).setDepth(DEPTH.vignette).setAlpha(0);
+    this.chimpVignette = this.add.image(0, 0, 'vignette').setOrigin(0).setDepth(DEPTH.drag + 1).setAlpha(0);
 
     this.progress = new WodProgress(this.wod);
     this.fx = new Effects(this);
     this.toast = new Toast(this);
+    this.cheerToast = new Toast(this, 300, true);
 
     this.brain = new Brain(
       {
@@ -127,10 +135,10 @@ export class GameScene extends Phaser.Scene {
         ? this.brain.buffCooldown(id) > 0 ? STR.buffCooldown(this.brain.buffCooldown(id)) : STR.buffHint
         : STR.dragHint),
         onTabChange: () => this.cancelDrag(),
-        onUpcoming: () => this.toast.show('업데이트 예정입니다!\n종코: 5초간 원장님의 멘탈 회복 속도 증가'),
     });
     if (this.wod) this.toolbar.setHighlighted(this.wod.requirements.map((r) => r.equipment));
     this.createProdButton();
+    this.createCheerButton();
 
     this.input.on(Phaser.Input.Events.POINTER_MOVE, this.onDragMove, this);
     this.input.on(Phaser.Input.Events.POINTER_UP, this.onDragEnd, this);
@@ -142,6 +150,7 @@ export class GameScene extends Phaser.Scene {
     const onHidden = () => this.setPaused(true);
     this.game.events.on('app-hidden', onHidden);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      audio.setMusic(null);
       this.game.events.off('app-hidden', onHidden);
       this.input.off(Phaser.Input.Events.POINTER_MOVE, this.onDragMove, this);
       this.input.off(Phaser.Input.Events.POINTER_UP, this.onDragEnd, this);
@@ -149,7 +158,8 @@ export class GameScene extends Phaser.Scene {
     });
 
     const intro = this.wod ? `${this.wod.name}: ${this.wod.original}` : STR.freeModeDesc;
-    this.toast.show(`${intro}\n${STR.dragHint}`, CONFIG.INTRO_TOAST_MS);
+    const guide = this.wod ? `필요 기구: ${this.wod.requirements.map(r => EQUIPMENT[r.equipment].name).join(' · ')}` : STR.dragHint;
+    this.toast.show(`${intro}\n${guide}`, CONFIG.INTRO_TOAST_MS);
     this.cameras.main.fadeIn(250, 0, 0, 0);
   }
 
@@ -202,6 +212,20 @@ export class GameScene extends Phaser.Scene {
     const c = this.view.bodyCenter;
     this.fx.slap(c.x, c.y);
     this.view.hit();
+    if (!this.ended && this.chimpRoll() < 0.001) {
+      const lost = this.progress.forget();
+      this.hud.refreshProgress();
+      this.toolbar.setHighlighted(this.wod?.requirements.filter(r => this.progress.remaining(r.equipment) > 0).map(r => r.equipment) ?? []);
+      const detail = lost.length ? `\n차감: ${lost.map(r => `${EQUIPMENT[r.equipment].name} −${r.count}`).join(' · ')}` : '';
+      this.toast.show(STR.toastChimp + detail, 2700, '#ffffff', true, true);
+      audio.play('warn');
+      this.tweens.killTweensOf(this.chimpVignette);
+      this.chimpVignette.setAlpha(0);
+      this.tweens.add({
+        targets: this.chimpVignette, alpha: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.25 : 0.85,
+        duration: 450, yoyo: true, repeat: 2, ease: 'Sine.easeInOut',
+      });
+    }
   }
 
   // ------------------------------------------------------------ Brain 이벤트
@@ -296,6 +320,7 @@ export class GameScene extends Phaser.Scene {
     if (counted) {
       audio.play('ding');
       this.hud.refreshProgress();
+      this.toolbar.setHighlighted(this.wod!.requirements.filter(r => this.progress.remaining(r.equipment) > 0).map(r => r.equipment));
     }
     if (eq.uses >= CONFIG.SESSIONS_PER_EQUIPMENT) {
       eq.remove(this.fx);
@@ -337,7 +362,7 @@ export class GameScene extends Phaser.Scene {
 
   private updateDrag(p: Phaser.Input.Pointer): void {
     const d = this.drag!;
-    const point = { x: p.x, y: p.y - CONFIG.DRAG_LIFT_PX };
+    const point = { x: p.x, y: p.y - (isBuff(d.type) ? CONFIG.DRAG_LIFT_PX : 0) };
     if (isBuff(d.type)) {
       const c = this.view.bodyCenter;
       d.valid = this.brain.buffCooldown(d.type) <= 0 && (d.type === 'chalk'
@@ -355,7 +380,7 @@ export class GameScene extends Phaser.Scene {
       d.slot = res.ok ? res.slot : -1;
       d.reason = res.ok ? undefined : res.reason;
       // 슬롯 기구는 가까운 슬롯에 스냅해서 보여준다
-      const show = def.zone === 'floor' || (!res.ok && res.reason === 'outside') ? point : res.pos;
+      const show = res.pos;
       d.ghost.setPosition(show.x, show.y);
       if (def.zone === 'floor' || def.zone === 'rig') d.ghost.setScale(spriteScale(show.y));
     }
@@ -390,6 +415,9 @@ export class GameScene extends Phaser.Scene {
       const taken = new Set(this.equipment.filter((e) => !e.removed && e.def.zone === def.zone).map((e) => e.slot));
       slotPoints(def.zone).forEach((s, i) => {
         if (taken.has(i)) return;
+        const allowed = evaluatePlacement(type, s, this.placedInfo(), this.brain.pos).ok;
+        g.fillStyle(allowed ? COLORS.good : COLORS.bad, 0.22);
+        g.lineStyle(3, allowed ? COLORS.good : COLORS.bad, 0.7);
         const sc = depthScale(s.y);
         if (def.zone === 'rig') {
           g.fillEllipse(s.x, s.y, 150 * sc, 44 * sc);
@@ -432,6 +460,8 @@ export class GameScene extends Phaser.Scene {
         this.toast.show(def.zone === 'floor' ? STR.toastFloorFull(CONFIG.MAX_FLOOR_EQUIPMENT) : STR.toastSlotFull);
       } else if (d.reason === 'slotTaken') {
         this.toast.show(STR.toastSlotFull);
+      } else {
+        this.toast.show(d.reason === 'overlap' ? '주변에 빈자리가 없어요. 조금 옆에 놓아주세요.' : '기구의 초록 배치 영역 안에 놓아주세요.');
       }
       this.returnGhost(d);
       return;
@@ -449,6 +479,23 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private createCheerButton(): void {
+    const { x, y, r } = CONFIG.PROD_BUTTON;
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.35).fillCircle(0, 6, r);
+    bg.fillStyle(0x18875b, 1).fillCircle(0, 0, r);
+    bg.lineStyle(5, 0xffffff, 0.9).strokeCircle(0, 0, r);
+    const icon = this.add.text(0, -20, '힘내!', { fontFamily: FONT, fontSize: '34px', color: '#fff3c4' }).setOrigin(0.5);
+    this.cheerLabel = this.add.text(0, 27, STR.cheerButton, { fontFamily: FONT, fontSize: '26px', color: '#ffffff' }).setOrigin(0.5);
+    this.cheerBtn = this.add.container(CONFIG.logicalWidth - x, y, [bg, icon, this.cheerLabel])
+      .setSize(r * 2 + 16, r * 2 + 16).setDepth(DEPTH.toolbar - 1).setInteractive({ useHandCursor: true });
+    this.cheerBtn.on('pointerdown', () => {
+      if (this.paused || this.ended || !this.brain.cheer()) return;
+      this.cheerToast.show(`미모반 ${pick(STR.cheerNames)}:\n${pick(STR.cheerLines)}`, 3000, '#173826');
+      audio.play('ding');
+    });
+  }
+
   private cancelDrag(): void {
     this.drag?.ghost.destroy();
     this.drag = null;
@@ -462,7 +509,7 @@ export class GameScene extends Phaser.Scene {
       audio.play('poof');
       this.toast.show(STR.toastChalk, CONFIG.BUFF_DURATION_SEC * 1000);
     } else {
-      this.coaches.push(new Coach(this, id, pos));
+      this.coaches.push(new Coach(this, id, pos, () => this.brain.pos));
       const messages = BUFFS[id].messages;
       const visits = this.coachVisits[id]++;
       this.toast.show(visits === 0 ? messages[0] : pick(messages.slice(1)), CONFIG.BUFF_DURATION_SEC * 1000);
@@ -491,8 +538,11 @@ export class GameScene extends Phaser.Scene {
     this.toolbar.enabled = false;
     this.cancelDrag();
     this.brain.celebrate();
+    audio.setMusic(null);
     audio.play('fanfare');
-    this.toast.show(STR.toastWodDone, CONFIG.CLEAR_TO_RESULT_MS, '#3ddc84');
+    this.tweens.killTweensOf(this.chimpVignette);
+    this.chimpVignette.setAlpha(0);
+    this.toast.show(STR.toastWodDone, CONFIG.CLEAR_TO_RESULT_MS, '#3ddc84', true);
     const c = this.view.bodyCenter;
     this.fx.starsAt(c.x, c.y - 60, 16);
     const time = this.elapsed;
@@ -510,8 +560,11 @@ export class GameScene extends Phaser.Scene {
     this.ended = true;
     this.toolbar.enabled = false;
     this.cancelDrag();
+    audio.setMusic(null);
     audio.play('fail');
-    if (reason === 'timeout') this.toast.show(STR.failTimeout, CONFIG.FAINT_TO_RESULT_MS, '#ff5a5a');
+    this.tweens.killTweensOf(this.chimpVignette);
+    this.chimpVignette.setAlpha(0);
+    this.toast.show(reason === 'timeout' ? STR.failTimeout : STR.toastFainted, CONFIG.FAINT_TO_RESULT_MS, '#ff5a5a', true);
     const data: ResultData = {
       level: this.wod?.level ?? null, cleared: false, reason, timeSec: this.elapsed, isBest: false,
       best: this.wod ? save.best(this.wod.id) : undefined,
@@ -537,6 +590,7 @@ export class GameScene extends Phaser.Scene {
     if (on === this.paused) return;
     if (on && this.ended) return;
     this.paused = on;
+    audio.pauseMusic(on);
     if (on) {
       this.cancelDrag();
       this.tweens.pauseAll();
@@ -607,6 +661,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (!this.ended) this.brain.update(dt);
+    const cheerCooldown = this.brain.cheerCooldown;
+    this.cheerLabel.setText(cheerCooldown > 0 ? `${Math.ceil(cheerCooldown)}초` : STR.cheerButton);
+    this.cheerBtn.setAlpha(this.ended || cheerCooldown > 0 ? 0.55 : 1);
     let coachLeft = false;
     this.coaches = this.coaches.filter(coach => {
       if (this.ended) { coach.destroy(); return false; }

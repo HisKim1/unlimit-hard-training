@@ -32,7 +32,23 @@ URL 옵션 (개발용)
 - `?viewer` : SpriteViewer (애니 재생, 앵커 십자선, 스케일·오프셋·fps 조정, anim-tuning.json 복사)
 - `?speed=2` : 게임 로직 배속 (밸런스 자동 테스트용)
 
-## 배포 (Netlify)
+## 배포 (Cloudflare Pages 연결 설정)
+
+Cloudflare Pages의 Git 연동에서 `HisKim1/unlimit-hard-training` 저장소를 선택한다.
+
+- Production branch: `main`
+- Framework preset: `None`
+- Build command: `npm run build`
+- Build output directory: `dist`
+- Root directory: 저장소 루트 (빈칸)
+- Node.js: `.node-version`의 22 사용
+
+Git 연동을 완료하면 main에 push할 때 자동 배포된다. 생성된 `*.pages.dev` 주소는 배포 완료 후 확인한다.
+이 게임은 정적 파일만 사용하며 Functions/Workers 유료 기능은 필요하지 않다.
+빌드된 스프라이트를 Git에 포함하므로 Cloudflare 빌드에서 Python은 필요 없다.
+주소가 바뀌면 브라우저 저장 기록은 공유되지 않으므로 기존 Netlify 기록은 새 주소로 자동 이전되지 않는다.
+
+## 기존 배포 (Netlify)
 
 운영 주소: https://unlimit-hard-training.netlify.app/
 
@@ -45,6 +61,12 @@ npx netlify-cli deploy --site 16f4b563-bec9-4904-906e-f267d1ddb813 --dir dist --
 ```
 
 GitHub push 자체는 자동 배포가 아니다. 자동 배포를 원하면 기존 Netlify 사이트에 이 저장소를 연결하고 빌드 명령 `npm run build`, 게시 디렉터리 `dist`를 설정한다. 인증 토큰과 `.netlify/`, `.env`는 Git에 올리지 않는다.
+
+## 배경음악
+
+Juhani Junkala의 CC0 음악을 사용한다. 출처와 라이선스는 [public/audio/CREDITS.md](public/audio/CREDITS.md).
+첫 터치 후 대기 음악, 운동 시작 시 운동 음악으로 전환한다. 일시정지/재개는 재생 위치를 유지하고, 결과 효과음 전에는 BGM을 페이드아웃한다. 기존 음소거 버튼은 효과음과 BGM에 함께 적용된다.
+`node tools/audio-check.mjs`로 제스처·디코딩·씬 전환·음소거·정지/재개를 검사한다. WebKit 설치가 필요하면 `node node_modules/playwright-core/cli.js install webkit`을 실행한다. Windows WebKit 빌드에 Web Audio가 없으면 오디오 검사는 명시적으로 건너뛴다(실제 iPhone 검증 아님).
 
 ## 스프라이트 파이프라인
 

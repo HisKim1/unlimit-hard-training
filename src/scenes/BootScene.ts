@@ -11,6 +11,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    this.load.image('unlimit_logo', 'assets/unlimit-logo.png');
     const W = CONFIG.logicalWidth;
     const H = CONFIG.logicalHeight;
     const label = this.add.text(W / 2, H / 2 - 40, STR.loading, { fontFamily: FONT, fontSize: '36px', color: '#fff' }).setOrigin(0.5);

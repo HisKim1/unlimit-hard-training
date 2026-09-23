@@ -89,7 +89,7 @@ async function placeOne(type, s) {
   if (x < 60 || x > 660) return false;
   const before = s.placed.filter(p => p.type === type).length;
   for (const [tx, ty] of spots) {
-    await drag(x, 1180, tx, ty + 64); // 드래그 중 기구는 손가락보다 64 위에 그려짐
+    await drag(x, 1180, tx, ty); // 손가락 위치가 실제 배치 위치
     await sleep(80);
     const n = (await snap()).placed?.filter(p => p.type === type).length ?? 0;
     if (n > before) return true;

@@ -1,0 +1,237 @@
+{
+  "sources": {
+    "coach_jong_front_1": {
+      "file": "jong/front-1.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_front_2": {
+      "file": "jong/front-2.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_front_3": {
+      "file": "jong/front-3.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_front_4": {
+      "file": "jong/front-4.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_front_5": {
+      "file": "jong/front-5.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_side_1": {
+      "file": "jong/side-1.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_side_2": {
+      "file": "jong/side-2.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_side_3": {
+      "file": "jong/side-3.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_side_4": {
+      "file": "jong/side-4.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_side_5": {
+      "file": "jong/side-5.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_side_6": {
+      "file": "jong/side-6.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_side_7": {
+      "file": "jong/side-7.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_side_8": {
+      "file": "jong/side-8.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_1": {
+      "file": "jong/diagonal-1.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_2": {
+      "file": "jong/diagonal-2.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_3": {
+      "file": "jong/diagonal-3.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_4": {
+      "file": "jong/diagonal-4.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_5": {
+      "file": "jong/diagonal-5.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_6": {
+      "file": "jong/diagonal-6.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_7": {
+      "file": "jong/diagonal-7.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_8": {
+      "file": "jong/diagonal-8.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_9": {
+      "file": "jong/diagonal-9.png",
+      "scale": 0.128,
+      "isolate": false
+    },
+    "coach_jong_diagonal_10": {
+      "file": "jong/diagonal-10.png",
+      "scale": 0.128,
+      "isolate": false
+    }
+  },
+  "anims": {
+    "coach_jong_front": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {
+          "src": "coach_jong_front_1"
+        },
+        {
+          "src": "coach_jong_front_2"
+        },
+        {
+          "src": "coach_jong_front_3"
+        },
+        {
+          "src": "coach_jong_front_4"
+        },
+        {
+          "src": "coach_jong_front_5"
+        }
+      ]
+    },
+    "coach_jong_side": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {
+          "src": "coach_jong_side_1"
+        },
+        {
+          "src": "coach_jong_side_2"
+        },
+        {
+          "src": "coach_jong_side_3"
+        },
+        {
+          "src": "coach_jong_side_4",
+          "flipX": true
+        },
+        {
+          "src": "coach_jong_side_5",
+          "flipX": true
+        },
+        {
+          "src": "coach_jong_side_6",
+          "flipX": true
+        }
+      ]
+    },
+    "coach_jong_diagonal": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {
+          "src": "coach_jong_diagonal_1"
+        },
+        {
+          "src": "coach_jong_diagonal_2"
+        },
+        {
+          "src": "coach_jong_diagonal_3",
+          "flipX": true
+        },
+        {
+          "src": "coach_jong_diagonal_4",
+          "flipX": true
+        },
+        {
+          "src": "coach_jong_diagonal_5",
+          "flipX": true
+        },
+        {
+          "src": "coach_jong_diagonal_6",
+          "flipX": true
+        }
+      ]
+    },
+    "coach_jong_back": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {
+          "src": "coach_jong_diagonal_7"
+        },
+        {
+          "src": "coach_jong_diagonal_8"
+        },
+        {
+          "src": "coach_jong_diagonal_9",
+          "flipX": true
+        },
+        {
+          "src": "coach_jong_diagonal_10",
+          "flipX": true
+        }
+      ]
+    }
+  },
+  "images": {
+    "icon_jong": {
+      "src": "coach_jong_front_1",
+      "box": [
+        170,
+        80,
+        780,
+        760
+      ],
+      "fit": [
+        112,
+        112
+      ],
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "isolate": false
+    }
+  }
+}

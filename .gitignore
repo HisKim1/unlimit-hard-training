@@ -4,6 +4,10 @@ dist
 .DS_Store
 artifacts
 .netlify
+.wrangler/
+.dev.vars
+.dev.vars.*
+.codex-remote-attachments/
 .claude/
 .env
 .env.*

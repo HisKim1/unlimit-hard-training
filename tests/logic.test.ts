@@ -67,6 +67,21 @@ describe('WodProgress (SPEC 9장)', () => {
     for (const w of WODS) for (const r of w.requirements) expect(r.labels.length).toBe(r.sessions);
   });
 
+  it('망각은 완료분에서 1~3회만 차감하고 다시 완료할 수 있다', () => {
+    const p = new WodProgress(fran);
+    expect(p.forget()).toEqual([]);
+    p.done.set('barbell', 3);
+    p.done.set('pullup', 1);
+    expect(p.forget(() => 0.999)).toEqual([{ equipment: 'pullup', count: 1 }, { equipment: 'barbell', count: 2 }]);
+    expect(p.remaining('barbell')).toBe(2);
+    expect(p.peek('barbell', '스러스터').counts).toBe(true);
+    expect(p.forget(() => 0)).toEqual([{ equipment: 'barbell', count: 1 }]);
+    expect(p.forget()).toEqual([]);
+    expect(new WodProgress(null).forget()).toEqual([]);
+    for (let i = 0; i < 3; i++) { p.commit('barbell'); p.commit('pullup'); }
+    expect(p.complete).toBe(true);
+  });
+
   it('자유 모드는 진행도 없음', () => {
     const p = new WodProgress(null);
     expect(p.peek('barbell', '스러스터')).toEqual({ label: '스러스터', counts: false });
@@ -92,11 +107,15 @@ describe('Placement (SPEC 8.2)', () => {
     expect(evaluatePlacement('rope', CONFIG.RIG_SLOT_POINTS[0], [], null).ok).toBe(false);
   });
 
-  it('겹치면 무효, 이미 찬 슬롯은 무효', () => {
+  it('바닥에서 겹치면 가까운 빈자리로 보정, 이미 찬 슬롯은 무효', () => {
     const placed: PlacedInfo[] = [{ id: 1, type: 'barbell', pos: { x: 300, y: 850 }, zone: 'floor', slot: -1 }];
-    expect(evaluatePlacement('dumbbell', { x: 310, y: 852 }, placed, null).ok).toBe(false);
+    const snapped = evaluatePlacement('dumbbell', { x: 310, y: 852 }, placed, null);
+    expect(snapped.ok).toBe(true);
+    expect(snapped.pos).not.toEqual({ x: 310, y: 852 });
+    expect(Math.hypot(snapped.pos.x - 310, snapped.pos.y - 852)).toBeLessThanOrEqual(96);
+    expect(evaluatePlacement('dumbbell', snapped.pos, placed, null).pos).toEqual(snapped.pos);
     expect(evaluatePlacement('dumbbell', { x: 300, y: 950 }, placed, null).ok).toBe(true);
-    expect(evaluatePlacement('dumbbell', { x: 500, y: 850 }, placed, { x: 500, y: 850 }).ok).toBe(false);
+    expect(evaluatePlacement('dumbbell', { x: 500, y: 850 }, placed, { x: 500, y: 850 }).ok).toBe(true);
     const rigPlaced: PlacedInfo[] = [{ id: 2, type: 'pullup', pos: CONFIG.RIG_SLOT_POINTS[0], zone: 'rig', slot: 0 }];
     expect(evaluatePlacement('pullup', CONFIG.RIG_SLOT_POINTS[0], rigPlaced, null).ok).toBe(false);
   });
@@ -108,5 +127,12 @@ describe('Placement (SPEC 8.2)', () => {
     const r = evaluatePlacement('kettlebell', { x: 360, y: 950 }, placed, null);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toBe('full');
+  });
+
+  it('초록 영역 경계와 윗부분도 배치되며 밖으로 보정하지 않는다', () => {
+    for (const p of [...CONFIG.FLOOR_POLYGON, { x: 150, y: 730 }]) {
+      expect(evaluatePlacement('barbell', p, [], null)).toMatchObject({ ok: true, pos: p });
+    }
+    expect(evaluatePlacement('barbell', { x: 150, y: 620 }, [], null).ok).toBe(false);
   });
 });

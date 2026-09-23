@@ -20,6 +20,7 @@ export class LevelSelectScene extends Phaser.Scene {
   }
 
   create(): void {
+    audio.setMusic('menu');
     this.scrollY = 0;
     this.dragStart = null;
     const W = CONFIG.logicalWidth;
