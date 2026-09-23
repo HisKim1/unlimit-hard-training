@@ -1,0 +1,76 @@
+{
+ "images": {
+  "icon_jumprope": {
+   "src": "icon_jumprope2",
+   "isolate": true,
+   "fit": [
+    112,
+    112
+   ],
+   "origin": [
+    0.5,
+    0.5
+   ]
+  },
+  "icon_wallball": {
+   "src": "icon_wallball",
+   "isolate": true,
+   "fit": [
+    104,
+    104
+   ],
+   "origin": [
+    0.5,
+    0.5
+   ]
+  },
+  "icon_box": {
+   "src": "icon_box",
+   "isolate": true,
+   "fit": [
+    112,
+    112
+   ],
+   "origin": [
+    0.5,
+    0.5
+   ]
+  },
+  "equip_jumprope": {
+   "src": "icon_jumprope2",
+   "isolate": true,
+   "fit": [
+    66,
+    66
+   ],
+   "origin": [
+    0.5,
+    1.0
+   ]
+  },
+  "equip_wallball": {
+   "src": "icon_wallball",
+   "isolate": true,
+   "fit": [
+    34,
+    34
+   ],
+   "origin": [
+    0.5,
+    1.0
+   ]
+  },
+  "equip_box": {
+   "src": "icon_box",
+   "isolate": true,
+   "fit": [
+    80,
+    80
+   ],
+   "origin": [
+    0.5,
+    1.0
+   ]
+  }
+ }
+}

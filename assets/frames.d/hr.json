@@ -1,0 +1,64 @@
+{
+  "anims": {
+    "wj_walk_front": {
+      "fps": 7,
+      "repeat": -1,
+      "yoyo": true,
+      "frames": [
+        {"src": "walk_front_3", "box": [0, 0, 941, 1672]},
+        {"src": "walk_front_2", "box": [0, 0, 941, 1672]},
+        {"src": "walk_front_1", "box": [0, 0, 941, 1672]},
+        {"src": "walk_front_4", "box": [0, 0, 941, 1672]},
+        {"src": "walk_front_5", "box": [0, 0, 941, 1672]}
+      ]
+    },
+    "wj_walk_back": {
+      "fps": 7,
+      "repeat": -1,
+      "frames": [
+        {"src": "walk_back_1", "box": [0, 0, 941, 1672]},
+        {"src": "walk_back_2", "box": [0, 0, 941, 1672]},
+        {"src": "walk_back_4", "box": [0, 0, 941, 1672]},
+        {"src": "walk_back_5", "box": [0, 0, 941, 1672]},
+        {"src": "walk_back_3", "box": [0, 0, 941, 1672]}
+      ]
+    },
+    "wj_idle": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {"src": "pose_idle_tired", "box": [0, 0, 941, 1672]}
+      ]
+    },
+    "wj_gaveup": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {"src": "pose_gave_up", "box": [0, 0, 941, 1672]}
+      ]
+    },
+    "wj_getup": {
+      "fps": 3,
+      "repeat": 0,
+      "frames": [
+        {"src": "pose_getup_kneel", "box": [0, 0, 941, 1672]},
+        {"src": "pose_getup_knees", "box": [0, 0, 941, 1672]}
+      ]
+    },
+    "wj_fainted": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {"src": "pose_fainted", "box": [0, 0, 941, 1672], "anchor": [471, 1134]}
+      ]
+    },
+    "wj_clear": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {"src": "pose_clear", "box": [0, 0, 941, 1672]}
+      ]
+    }
+  },
+  "images": {}
+}

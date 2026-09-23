@@ -1,0 +1,220 @@
+{
+  "sources": {
+    "coach_bong_front_1": {
+      "file": "../src/봉코1.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_bong_front_2": {
+      "file": "../src/봉코2.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_bong_front_3": {
+      "file": "../src/봉코3.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_bong_front_4": {
+      "file": "../src/봉코4.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_bong_front_5": {
+      "file": "../src/봉코5.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_bong_back_1": {
+      "file": "../src/뒤봉코1.png",
+      "scale": 0.1288,
+      "isolate": false
+    },
+    "coach_bong_back_2": {
+      "file": "../src/뒤봉코2.png",
+      "scale": 0.1288,
+      "isolate": false
+    },
+    "coach_bong_back_3": {
+      "file": "../src/뒤봉코3.png",
+      "scale": 0.1288,
+      "isolate": false
+    },
+    "coach_bong_back_4": {
+      "file": "../src/뒤봉코4.png",
+      "scale": 0.1288,
+      "isolate": false
+    },
+    "coach_heo_front_1": {
+      "file": "../src/허코.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_heo_front_2": {
+      "file": "../src/허코2.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_heo_front_3": {
+      "file": "../src/허코3.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_heo_front_4": {
+      "file": "../src/허코4.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_heo_front_5": {
+      "file": "../src/허코5.png",
+      "scale": 0.135,
+      "isolate": false
+    },
+    "coach_heo_back_1": {
+      "file": "../src/뒤허코1.png",
+      "scale": 0.1288,
+      "isolate": false
+    },
+    "coach_heo_back_2": {
+      "file": "../src/뒤허코2.png",
+      "scale": 0.1288,
+      "isolate": false
+    },
+    "coach_heo_back_3": {
+      "file": "../src/뒤허코3.png",
+      "scale": 0.1288,
+      "isolate": false
+    },
+    "coach_heo_back_4": {
+      "file": "../src/뒤허코4.png",
+      "scale": 0.1288,
+      "isolate": false
+    },
+    "coach_heo_back_5": {
+      "file": "../src/뒤허코5.png",
+      "scale": 0.1288,
+      "isolate": false
+    }
+  },
+  "anims": {
+    "coach_bong_front": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {
+          "src": "coach_bong_front_1"
+        },
+        {
+          "src": "coach_bong_front_2"
+        },
+        {
+          "src": "coach_bong_front_3"
+        },
+        {
+          "src": "coach_bong_front_4"
+        },
+        {
+          "src": "coach_bong_front_5"
+        }
+      ]
+    },
+    "coach_bong_back": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {
+          "src": "coach_bong_back_1"
+        },
+        {
+          "src": "coach_bong_back_2"
+        },
+        {
+          "src": "coach_bong_back_3"
+        },
+        {
+          "src": "coach_bong_back_4"
+        }
+      ]
+    },
+    "coach_heo_front": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {
+          "src": "coach_heo_front_1"
+        },
+        {
+          "src": "coach_heo_front_2"
+        },
+        {
+          "src": "coach_heo_front_3"
+        },
+        {
+          "src": "coach_heo_front_4"
+        },
+        {
+          "src": "coach_heo_front_5"
+        }
+      ]
+    },
+    "coach_heo_back": {
+      "fps": 8,
+      "repeat": -1,
+      "frames": [
+        {
+          "src": "coach_heo_back_1"
+        },
+        {
+          "src": "coach_heo_back_2"
+        },
+        {
+          "src": "coach_heo_back_3"
+        },
+        {
+          "src": "coach_heo_back_4"
+        },
+        {
+          "src": "coach_heo_back_5"
+        }
+      ]
+    }
+  },
+  "images": {
+    "icon_bong": {
+      "src": "coach_bong_front_1",
+      "box": [
+        200,
+        60,
+        840,
+        690
+      ],
+      "fit": [
+        112,
+        112
+      ],
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "isolate": false
+    },
+    "icon_heo": {
+      "src": "coach_heo_front_1",
+      "box": [
+        200,
+        60,
+        840,
+        690
+      ],
+      "fit": [
+        112,
+        112
+      ],
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "isolate": false
+    }
+  }
+}

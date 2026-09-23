@@ -1,0 +1,71 @@
+{
+  "anims": {
+    "floor_01": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_a", "box": [410, 1288, 574, 1372]}
+      ]
+    },
+    "floor_02": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_e", "box": [318, 1130, 440, 1288]}
+      ]
+    },
+    "floor_03": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_a", "box": [262, 1256, 404, 1387]}
+      ]
+    },
+    "floor_04": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_b", "box": [1018, 1183, 1212, 1297]}
+      ]
+    },
+    "floor_05": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_a", "box": [572, 1281, 726, 1380]}
+      ]
+    },
+    "floor_06": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_d", "box": [677, 780, 860, 1012]}
+      ]
+    },
+    "floor_07": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_b", "box": [430, 1172, 616, 1288], "erase": [[610, 1225, 670, 1275]]}
+      ]
+    },
+    "floor_08": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_d", "box": [383, 793, 602, 1012]}
+      ]
+    },
+    "floor_09": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_a", "box": [722, 1275, 904, 1392]}
+      ]
+    },
+    "floor_10": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_b", "box": [795, 1130, 910, 1290]}
+      ]
+    },
+    "floor_ghost": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "sheet_c", "box": [985, 745, 1275, 940], "erase": [[1150, 680, 1290, 818]]}
+      ]
+    }
+  },
+  "images": {}
+}

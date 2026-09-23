@@ -1,0 +1,63 @@
+/* 모바일 대응 (SPEC 12장) */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #0b0d10;
+  overflow: hidden;
+  overscroll-behavior: none; /* 당겨서 새로고침 방지 */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+/* 안전 영역(노치·홈 인디케이터)을 비워두고 그 안에 캔버스를 맞춘다 */
+#wrap {
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#game {
+  width: 100%;
+  height: 100%;
+}
+
+#game canvas {
+  touch-action: none;
+  -webkit-user-drag: none;
+  display: block;
+}
+
+#rotate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #0d1117;
+  color: #fff;
+  font-family: Jua, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+#rotate div {
+  font-size: 64px;
+}
+#rotate p {
+  font-size: 28px;
+  margin: 12px 0 0;
+}
+
+/* 휴대폰을 가로로 돌렸을 때만 (데스크톱 가로 창은 제외) */
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 600px) {
+  #rotate {
+    display: flex;
+  }
+}

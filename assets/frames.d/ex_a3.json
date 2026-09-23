@@ -1,0 +1,44 @@
+{
+ "anims": {
+  "wj_row": {
+   "fps": 6, "repeat": -1, "yoyo": false,
+   "frames": [
+    {"src": "sheet_a", "box": [4,1065,128,1218], "anchor": [25,1209]},
+    {"src": "sheet_a", "box": [134,1068,258,1222], "anchor": [160,1209]},
+    {"src": "sheet_a", "box": [258,1071,386,1221], "anchor": [287,1209]},
+    {"src": "sheet_a", "box": [386,1066,498,1221], "anchor": [410,1209]}
+   ]
+  },
+  "wj_ski": {
+   "fps": 6, "repeat": -1, "yoyo": false,
+   "frames": [
+    {"src": "sheet_a", "box": [524,1053,648,1231], "anchor": [588,1227]},
+    {"src": "sheet_a", "box": [648,1053,750,1231], "anchor": [706,1227]},
+    {"src": "sheet_a", "box": [750,1069,885,1229], "anchor": [820,1226]},
+    {"src": "sheet_a", "box": [901,1077,988,1228], "anchor": [939,1224]}
+   ]
+  },
+  "wj_bike": {
+   "fps": 6, "repeat": -1, "yoyo": false,
+   "frames": [
+    {"src": "sheet_b", "box": [698,896,814,1090], "anchor": [752,1082]},
+    {"src": "sheet_b", "box": [814,891,926,1090], "anchor": [871,1080]},
+    {"src": "sheet_b", "box": [922,916,1046,1092], "anchor": [982,1082]}
+   ]
+  },
+  "wj_reels": {
+   "fps": 1, "repeat": -1, "yoyo": false,
+   "frames": [
+    {"src": "sheet_a", "box": [15,1238,118,1394]}
+   ]
+  },
+  "wj_reels_tripod": {
+   "fps": 2, "repeat": -1, "yoyo": true,
+   "frames": [
+    {"src": "sheet_b", "box": [4,1098,138,1288]},
+    {"src": "sheet_b", "box": [134,1093,272,1294]}
+   ]
+  }
+ },
+ "images": {}
+}

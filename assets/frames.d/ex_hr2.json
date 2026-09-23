@@ -1,0 +1,144 @@
+{
+ "anims": {
+  "wj_boxjump": {
+   "fps": 4,
+   "repeat": -1,
+   "yoyo": false,
+   "scale": 0.89,
+   "frames": [
+    {
+     "src": "boxjump_1",
+     "box": [
+      0,
+      475,
+      940,
+      1465
+     ],
+     "anchor": [
+      675,
+      1450
+     ],
+     "scale": 1.274
+    },
+    {
+     "src": "boxjump_2",
+     "box": [
+      0,
+      120,
+      940,
+      1595
+     ],
+     "anchor": [
+      595,
+      1580
+     ],
+     "scale": 1.0
+    },
+    {
+     "src": "boxjump_3",
+     "box": [
+      0,
+      225,
+      940,
+      1540
+     ],
+     "anchor": [
+      628,
+      1515
+     ],
+     "scale": 1.103
+    }
+   ]
+  },
+  "wj_wallball": {
+   "fps": 4,
+   "repeat": -1,
+   "yoyo": false,
+   "scale": 0.89,
+   "frames": [
+    {
+     "src": "wallball_3",
+     "box": [
+      0,
+      215,
+      940,
+      1555
+     ]
+    },
+    {
+     "src": "wallball_1",
+     "box": [
+      0,
+      285,
+      940,
+      1575
+     ]
+    },
+    {
+     "src": "wallball_2",
+     "box": [
+      0,
+      0,
+      940,
+      1645
+     ],
+     "keep": [
+      [
+       483,
+       274
+      ]
+     ]
+    }
+   ]
+  },
+  "wj_ringmu": {
+   "fps": 3,
+   "repeat": -1,
+   "yoyo": true,
+   "scale": 0.89,
+   "frames": [
+    {
+     "src": "ringmu_1",
+     "box": [
+      0,
+      0,
+      940,
+      1565
+     ],
+     "anchor": [
+      493,
+      202
+     ],
+     "scale": 1.2
+    },
+    {
+     "src": "ringmu_2",
+     "box": [
+      0,
+      0,
+      940,
+      1475
+     ],
+     "anchor": [
+      468,
+      845
+     ]
+    },
+    {
+     "src": "ringmu_3",
+     "box": [
+      0,
+      0,
+      940,
+      1580
+     ],
+     "anchor": [
+      491,
+      919
+     ]
+    }
+   ]
+  }
+ },
+ "images": {}
+}

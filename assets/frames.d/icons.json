@@ -1,0 +1,24 @@
+{
+ "images": {
+  "icon_kettlebell": {"src": "icon_kettlebell", "fit": [112, 112], "origin": [0.5, 0.5]},
+  "icon_mat": {"src": "icon_mat", "fit": [112, 112], "origin": [0.5, 0.5]},
+  "icon_rope": {"src": "icon_rope", "fit": [112, 112], "origin": [0.5, 0.5]},
+  "icon_dumbbell": {"src": "sheet_a", "box": [86, 1438, 169, 1506], "isolate": true, "fit": [112, 112], "origin": [0.5, 0.5]},
+  "icon_barbell": {"src": "sheet_a", "box": [857, 1441, 1017, 1510], "isolate": true, "fit": [112, 112], "origin": [0.5, 0.5]},
+  "icon_rower": {"src": "sheet_a", "box": [507, 1419, 676, 1522], "isolate": true, "fit": [112, 112], "origin": [0.5, 0.5]},
+  "icon_bike": {"src": "sheet_a", "box": [763, 1402, 855, 1525], "isolate": true, "flipX": true, "fit": [112, 112], "origin": [0.5, 0.5]},
+  "icon_ski": {"src": "sheet_a", "box": [690, 1392, 770, 1530], "isolate": true, "fit": [112, 112], "origin": [0.5, 0.5]},
+  "icon_pullup": {"src": "sheet_e", "box": [592, 32, 767, 199], "isolate": true, "fit": [112, 112], "origin": [0.5, 0.5]},
+
+  "equip_kettlebell": {"src": "sheet_a", "box": [15, 1416, 84, 1516], "isolate": true, "origin": [0.5, 1.0]},
+  "equip_dumbbell": {"src": "sheet_a", "box": [86, 1438, 169, 1506], "isolate": true, "origin": [0.5, 1.0]},
+  "equip_barbell": {"src": "sheet_a", "box": [857, 1441, 1017, 1510], "isolate": true, "origin": [0.5, 1.0]},
+  "equip_rower": {"src": "sheet_a", "box": [507, 1419, 676, 1522], "isolate": true, "fit": [120, 74], "origin": [0.18, 1.0]},
+  "equip_bike": {"src": "sheet_a", "box": [763, 1402, 855, 1525], "isolate": true, "flipX": true, "origin": [0.3, 1.0]},
+  "equip_ski": {"src": "sheet_a", "box": [690, 1392, 770, 1530], "isolate": true, "origin": [0.5, 1.0]},
+  "equip_mat": {"src": "sheet_a", "box": [276, 1435, 394, 1505], "isolate": true, "origin": [0.5, 1.0]},
+  "equip_pullup": {"src": "sheet_e", "box": [592, 32, 767, 199], "isolate": true, "scale": 1.24, "origin": [0.5, 1.0]},
+  "equip_rope": {"src": "sheet_b", "box": [524, 2, 552, 283], "isolate": true, "origin": [0.5, 0.0]},
+  "equip_box": {"src": "sheet_a", "box": [178, 1430, 274, 1523], "isolate": true, "origin": [0.5, 1.0]}
+ }
+}

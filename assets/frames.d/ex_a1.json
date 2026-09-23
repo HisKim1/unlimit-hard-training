@@ -1,0 +1,36 @@
+{
+  "anims": {
+    "wj_kb_swing": {
+      "fps": 10,
+      "repeat": -1,
+      "yoyo": true,
+      "frames": [
+        {"src": "sheet_a", "box": [34, 438, 136, 578]},
+        {"src": "sheet_a", "box": [130, 395, 231, 578]},
+        {"src": "sheet_a", "box": [233, 392, 322, 578]},
+        {"src": "sheet_a", "box": [313, 391, 416, 578]},
+        {"src": "sheet_a", "box": [413, 400, 531, 576]}
+      ]
+    },
+    "wj_airsquat": {
+      "fps": 6,
+      "repeat": -1,
+      "yoyo": true,
+      "frames": [
+        {"src": "sheet_a", "box": [22, 718, 100, 890]},
+        {"src": "sheet_a", "box": [126, 745, 217, 890]},
+        {"src": "sheet_a", "box": [242, 753, 338, 890]}
+      ]
+    },
+    "wj_pushup": {
+      "fps": 3,
+      "repeat": -1,
+      "yoyo": true,
+      "frames": [
+        {"src": "sheet_a", "box": [8, 607, 108, 714]},
+        {"src": "sheet_a", "box": [83, 640, 215, 714], "erase": [[213, 638, 280, 720], [83, 638, 116, 690]]}
+      ]
+    }
+  },
+  "images": {}
+}

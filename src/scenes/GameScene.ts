@@ -1,0 +1,653 @@
+// 게임 본편: 박스, 원장님, 기구 배치, 재촉, WOD 진행
+import Phaser from 'phaser';
+import { COLORS, CONFIG, DEBUG, FONT, TIME_SCALE, depthScale, spriteScale, type Point } from '../config';
+import { EQUIPMENT, FREE_MODE_EXTRA_MOTIONS, type EquipmentId, type MotionPreset } from '../equipment';
+import { wodByLevel, type WodDef } from '../wods';
+import { STR, pick } from '../strings';
+import { Brain, type BrainEvent, type PoseTier } from '../systems/Brain';
+import { WodProgress } from '../systems/WodProgress';
+import { evaluatePlacement, pointInPolygon, slotPoints, type PlacedInfo } from '../systems/Placement';
+import { audio } from '../systems/Audio';
+import { save } from '../systems/Save';
+import { Equipment } from '../entities/Equipment';
+import { WonjangView } from '../entities/Wonjang';
+import { DEPTH, Effects } from '../fx/Effects';
+import { Toast } from '../ui/Toast';
+import { HUD } from '../ui/HUD';
+import { Toolbar } from '../ui/Toolbar';
+import { imageOrigin, imageRef } from '../assets';
+import { BUFFS, isBuff, type BuffId, type ToolbarId } from '../buffs';
+import { Coach } from '../entities/Coach';
+
+export interface GameData {
+  level?: number; // 없으면 자유 모드
+}
+
+export interface ResultData {
+  level: number | null;
+  cleared: boolean;
+  reason?: 'timeout' | 'fainted';
+  timeSec: number;
+  isBest: boolean;
+  best?: number;
+}
+
+/** 바닥 포즈 사용 규칙 (motion_floor_exhausted 번호 기준, SPEC 5.2) */
+const FLOOR_POSES: Record<PoseTier, string[]> = {
+  base: ['floor_01', 'floor_04', 'floor_05', 'floor_07', 'floor_09', 'floor_10'],
+  mid: ['floor_02', 'floor_08'],
+  high: ['floor_06'],
+};
+
+interface Drag {
+  type: ToolbarId;
+  pointerId: number;
+  ghost: Phaser.GameObjects.Image;
+  valid: boolean;
+  pos: Point;
+  slot: number;
+  reason?: string;
+}
+
+export class GameScene extends Phaser.Scene {
+  private wod: WodDef | null = null;
+  private progress!: WodProgress;
+  private brain!: Brain;
+  private view!: WonjangView;
+  private fx!: Effects;
+  private toast!: Toast;
+  private hud!: HUD;
+  private toolbar!: Toolbar;
+  private equipment: Equipment[] = [];
+  private landed = new Set<number>();
+  private zoneGfx!: Phaser.GameObjects.Graphics;
+  private debugGfx?: Phaser.GameObjects.Graphics;
+  private vignette!: Phaser.GameObjects.Image;
+  private prodBtn!: Phaser.GameObjects.Container;
+  private prodBg!: Phaser.GameObjects.Graphics;
+  private drag: Drag | null = null;
+  private elapsed = 0;
+  private ended = false;
+  private paused = false;
+  private pauseLayer?: Phaser.GameObjects.Container;
+  private coaches: Coach[] = [];
+  private coachVisits = { bong: 0, heo: 0 };
+  private timeWarned = false;
+  private prodPressedMs = 0;
+
+  constructor() {
+    super('Game');
+  }
+
+  init(data: GameData): void {
+    this.wod = data.level ? wodByLevel(data.level) ?? null : null;
+    this.equipment = [];
+    this.landed = new Set();
+    this.drag = null;
+    this.elapsed = 0;
+    this.ended = false;
+    this.paused = false;
+    this.pauseLayer = undefined;
+    this.coaches = [];
+    this.coachVisits = { bong: 0, heo: 0 };
+    this.timeWarned = false;
+  }
+
+  create(): void {
+    const W = CONFIG.logicalWidth;
+    const H = CONFIG.logicalHeight;
+    this.add.image(0, 0, 'box_bg').setOrigin(0).setDisplaySize(W, H).setDepth(DEPTH.bg);
+    this.zoneGfx = this.add.graphics().setDepth(DEPTH.zone);
+    this.vignette = this.add.image(0, 0, 'vignette').setOrigin(0).setDepth(DEPTH.vignette).setAlpha(0);
+
+    this.progress = new WodProgress(this.wod);
+    this.fx = new Effects(this);
+    this.toast = new Toast(this);
+
+    this.brain = new Brain(
+      {
+        candidates: () => this.equipment
+          .filter((e) => !e.removed && this.landed.has(e.id))
+          .map((e) => ({ id: e.id, usePoint: e.usePoint })),
+        sessionDurationSec: (id) => this.eqById(id)?.def.sessionDurationSec ?? 5,
+      },
+      CONFIG.WONJANG_START,
+    );
+    this.view = new WonjangView(this, this.brain, this.fx);
+    this.brain.on((e) => this.onBrainEvent(e));
+
+    this.hud = new HUD(this, this.progress, {
+      onPause: () => this.setPaused(true),
+      onMute: () => this.toggleMute(),
+    });
+    this.hud.setMuted(save.muted);
+    this.toolbar = new Toolbar(this, {
+      onDragStart: (id, p) => this.beginDrag(id, p),
+      onTap: (id) => this.toast.show(isBuff(id)
+        ? this.brain.buffCooldown(id) > 0 ? STR.buffCooldown(this.brain.buffCooldown(id)) : STR.buffHint
+        : STR.dragHint),
+        onTabChange: () => this.cancelDrag(),
+        onUpcoming: () => this.toast.show('업데이트 예정입니다!\n종코: 5초간 원장님의 멘탈 회복 속도 증가'),
+    });
+    if (this.wod) this.toolbar.setHighlighted(this.wod.requirements.map((r) => r.equipment));
+    this.createProdButton();
+
+    this.input.on(Phaser.Input.Events.POINTER_MOVE, this.onDragMove, this);
+    this.input.on(Phaser.Input.Events.POINTER_UP, this.onDragEnd, this);
+    this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, this.onDragEnd, this);
+
+    if (DEBUG) this.debugGfx = this.add.graphics().setDepth(DEPTH.label + 20);
+
+    // 탭이 숨겨지면 일시정지 → 돌아오면 "계속하기"
+    const onHidden = () => this.setPaused(true);
+    this.game.events.on('app-hidden', onHidden);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off('app-hidden', onHidden);
+      this.input.off(Phaser.Input.Events.POINTER_MOVE, this.onDragMove, this);
+      this.input.off(Phaser.Input.Events.POINTER_UP, this.onDragEnd, this);
+      this.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE, this.onDragEnd, this);
+    });
+
+    const intro = this.wod ? `${this.wod.name}: ${this.wod.original}` : STR.freeModeDesc;
+    this.toast.show(`${intro}\n${STR.dragHint}`, CONFIG.INTRO_TOAST_MS);
+    this.cameras.main.fadeIn(250, 0, 0, 0);
+  }
+
+  private eqById(id: number): Equipment | undefined {
+    return this.equipment.find((e) => e.id === id);
+  }
+
+  // ------------------------------------------------------------ 재촉 버튼
+
+  private createProdButton(): void {
+    const { x, y, r } = CONFIG.PROD_BUTTON;
+    this.prodBg = this.add.graphics();
+    const hand = this.add.image(0, -12, 'hand').setScale(0.52);
+    const label = this.add.text(0, 34, STR.prodButton, {
+      fontFamily: FONT, fontSize: '28px', color: '#ffffff', stroke: '#6b1d00', strokeThickness: 6,
+    }).setOrigin(0.5);
+    this.prodBtn = this.add.container(x, y, [this.prodBg, hand, label]).setDepth(DEPTH.toolbar - 1);
+    this.drawProdButton(false);
+    const zone = this.add.zone(x, y, r * 2 + 16, r * 2 + 16).setInteractive({ useHandCursor: true }).setDepth(DEPTH.toolbar - 1);
+    zone.on('pointerdown', () => this.onProd());
+  }
+
+  private drawProdButton(pressed: boolean): void {
+    const r = CONFIG.PROD_BUTTON.r;
+    const g = this.prodBg;
+    g.clear();
+    g.fillStyle(0x000000, 0.35);
+    g.fillCircle(0, 6, r);
+    g.fillStyle(pressed ? COLORS.prodPressed : COLORS.prod, 1);
+    g.fillCircle(0, pressed ? 4 : 0, r);
+    g.lineStyle(5, 0xffffff, 0.9);
+    g.strokeCircle(0, pressed ? 4 : 0, r);
+    this.prodBtn.setScale(pressed ? 0.94 : 1);
+  }
+
+  private onProd(): void {
+    if (this.paused || this.ended) return;
+    if (!this.brain.prod()) {
+      // 쿨타임 중: 입력 무시, 버튼은 눌린 채
+      return;
+    }
+    this.prodPressedMs = CONFIG.PROD_COOLDOWN_MS;
+    this.drawProdButton(true);
+    audio.play('slap');
+    try {
+      navigator.vibrate?.(CONFIG.PROD_VIBRATE_MS);
+    } catch {
+      // iOS 등 진동 미지원: 무시
+    }
+    const c = this.view.bodyCenter;
+    this.fx.slap(c.x, c.y);
+    this.view.hit();
+  }
+
+  // ------------------------------------------------------------ Brain 이벤트
+
+  private onBrainEvent(e: BrainEvent): void {
+    switch (e.type) {
+      case 'toast':
+        this.toast.show(e.text);
+        break;
+      case 'state':
+        if (e.to === 'WALKING') {
+          const t = this.brain.targetId !== null ? this.eqById(this.brain.targetId) : undefined;
+          this.view.lastTarget = t ? t.usePoint : null;
+        }
+        if (e.to === 'GETTING_UP' || e.to === 'EXHAUSTED' || e.to === 'IDLE_REELS' || e.to === 'GAVE_UP' || e.to === 'FAINTED') {
+          if (this.view.exercise) this.view.endExercise();
+        }
+        if (e.to === 'EXHAUSTED' && e.from !== 'EXHAUSTED') this.view.floorPose = this.pickFloorPose('base');
+        this.view.onStateChange();
+        break;
+      case 'startExercise':
+        this.startExercise(e.equipmentId);
+        break;
+      case 'sessionComplete':
+        this.completeSession(e.equipmentId);
+        break;
+      case 'sessionAborted':
+        this.view.endExercise();
+        break;
+      case 'poseChange':
+        this.view.setFloorPose(this.pickFloorPose(e.tier));
+        break;
+      case 'poseSwap':
+        this.view.setFloorPose(this.pickFloorPose(this.brain.poseTier, this.view.floorPose));
+        break;
+      case 'burnoutWarning':
+        audio.play('warn');
+        break;
+      case 'fainted':
+        this.fail('fainted');
+        break;
+      default:
+        break;
+    }
+  }
+
+  private pickFloorPose(tier: PoseTier, avoid?: string): string {
+    const have = (keys: string[]) => keys.filter((k) => this.anims.exists(k));
+    let pool = have(FLOOR_POSES[tier]);
+    if (pool.length === 0) pool = have(FLOOR_POSES.base);
+    if (pool.length === 0) pool = have(['floor_01', 'floor_03', 'wj_fainted']);
+    if (pool.length === 0) return 'floor_01';
+    const filtered = avoid ? pool.filter((k) => k !== avoid) : pool;
+    return pick(filtered.length ? filtered : pool);
+  }
+
+  private presetFor(type: EquipmentId): MotionPreset {
+    const def = EQUIPMENT[type];
+    const base: MotionPreset = { motions: def.motions, exercise: def.exercise };
+    const ov = this.wod?.overrides?.[type];
+    if (ov) return ov;
+    if (!this.wod) {
+      const extras = FREE_MODE_EXTRA_MOTIONS[type] ?? [];
+      const pool = [base, ...extras].filter((p) => p.motions.some((m) => this.anims.exists(m)));
+      if (pool.length) return pick(pool);
+    }
+    return base;
+  }
+
+  private startExercise(id: number): void {
+    const eq = this.eqById(id);
+    if (!eq) return;
+    const preset = this.presetFor(eq.type);
+    const anims = preset.motions.filter((m) => this.anims.exists(m));
+    const info = this.progress.peek(eq.type, preset.exercise);
+    this.view.startExercise({
+      eq,
+      anim: anims[0] ?? preset.motions[0] ?? 'wj_idle',
+      anims: anims.length ? anims : preset.motions,
+      label: info.label,
+      counts: info.counts,
+    });
+  }
+
+  private completeSession(id: number): void {
+    if (this.ended) return;
+    const eq = this.eqById(id);
+    this.view.endExercise();
+    if (!eq) return;
+    eq.addUse();
+    const counted = this.progress.commit(eq.type);
+    if (counted) {
+      audio.play('ding');
+      this.hud.refreshProgress();
+    }
+    if (eq.uses >= CONFIG.SESSIONS_PER_EQUIPMENT) {
+      eq.remove(this.fx);
+      audio.play('poof');
+      this.equipment = this.equipment.filter((e) => e !== eq);
+      this.landed.delete(eq.id);
+    }
+    if (this.progress.complete) this.clear();
+  }
+
+  // ------------------------------------------------------------ 드래그 배치
+
+  private placedInfo(): PlacedInfo[] {
+    return this.equipment.filter((e) => !e.removed).map((e) => ({ id: e.id, type: e.type, pos: e.pos, zone: e.def.zone, slot: e.slot }));
+  }
+
+  private beginDrag(type: ToolbarId, p: Phaser.Input.Pointer): void {
+    if (this.paused || this.ended || this.drag) return;
+    if (isBuff(type) && this.brain.buffCooldown(type) > 0) {
+      this.toast.show(STR.buffCooldown(this.brain.buffCooldown(type)));
+      return;
+    }
+    const def = isBuff(type) ? null : EQUIPMENT[type];
+    const useIcon = !def || def.zone === 'ceiling';
+    const name = isBuff(type) ? BUFFS[type].icon : useIcon ? EQUIPMENT[type].icon : EQUIPMENT[type].sprite;
+    const ref = imageRef(this, name);
+    const o = useIcon ? { x: 0.5, y: 1 } : imageOrigin(name);
+    const ghost = this.add.image(p.x, p.y, ref.key, ref.frame).setOrigin(o.x, o.y).setDepth(DEPTH.drag).setAlpha(0.85);
+    if (useIcon) ghost.setScale(0.9);
+    this.drag = { type, pointerId: p.id, ghost, valid: false, pos: { x: p.x, y: p.y }, slot: -1 };
+    audio.play('pop');
+    this.updateDrag(p);
+  }
+
+  private onDragMove(p: Phaser.Input.Pointer): void {
+    if (!this.drag || p.id !== this.drag.pointerId) return;
+    this.updateDrag(p);
+  }
+
+  private updateDrag(p: Phaser.Input.Pointer): void {
+    const d = this.drag!;
+    const point = { x: p.x, y: p.y - CONFIG.DRAG_LIFT_PX };
+    if (isBuff(d.type)) {
+      const c = this.view.bodyCenter;
+      d.valid = this.brain.buffCooldown(d.type) <= 0 && (d.type === 'chalk'
+        ? Math.hypot(point.x - c.x, point.y - c.y) <= CONFIG.CHALK_DROP_RADIUS_PX
+        : pointInPolygon(point, CONFIG.FLOOR_POLYGON));
+      d.pos = point;
+      d.ghost.setPosition(point.x, point.y);
+    } else {
+      const def = EQUIPMENT[d.type];
+      const exercise = this.view.exercise?.eq;
+      const body = exercise && exercise.def.zone === 'floor' ? exercise.exercisePoint : this.brain.pos;
+      const res = evaluatePlacement(d.type, point, this.placedInfo(), body);
+      d.valid = res.ok;
+      d.pos = res.pos;
+      d.slot = res.ok ? res.slot : -1;
+      d.reason = res.ok ? undefined : res.reason;
+      // 슬롯 기구는 가까운 슬롯에 스냅해서 보여준다
+      const show = def.zone === 'floor' || (!res.ok && res.reason === 'outside') ? point : res.pos;
+      d.ghost.setPosition(show.x, show.y);
+      if (def.zone === 'floor' || def.zone === 'rig') d.ghost.setScale(spriteScale(show.y));
+    }
+    if (d.valid) d.ghost.clearTint();
+    else d.ghost.setTint(0xff4d4d);
+    this.drawZones(d.type);
+  }
+
+  /** 드래그 중 설치 가능 영역을 초록 반투명으로 표시 */
+  private drawZones(type: ToolbarId | null): void {
+    const g = this.zoneGfx;
+    g.clear();
+    if (!type) return;
+    g.fillStyle(COLORS.good, 0.22);
+    g.lineStyle(3, COLORS.good, 0.7);
+    if (isBuff(type)) {
+      if (type === 'chalk') {
+        const c = this.view.bodyCenter;
+        g.fillCircle(c.x, c.y, CONFIG.CHALK_DROP_RADIUS_PX);
+        g.strokeCircle(c.x, c.y, CONFIG.CHALK_DROP_RADIUS_PX);
+      } else {
+        g.fillPoints(CONFIG.FLOOR_POLYGON, true);
+        g.strokePoints(CONFIG.FLOOR_POLYGON, true);
+      }
+      return;
+    }
+    const def = EQUIPMENT[type];
+    if (def.zone === 'floor') {
+      g.fillPoints(CONFIG.FLOOR_POLYGON, true);
+      g.strokePoints(CONFIG.FLOOR_POLYGON, true);
+    } else if (def.zone === 'rig' || def.zone === 'ceiling') {
+      const taken = new Set(this.equipment.filter((e) => !e.removed && e.def.zone === def.zone).map((e) => e.slot));
+      slotPoints(def.zone).forEach((s, i) => {
+        if (taken.has(i)) return;
+        const sc = depthScale(s.y);
+        if (def.zone === 'rig') {
+          g.fillEllipse(s.x, s.y, 150 * sc, 44 * sc);
+          g.strokeEllipse(s.x, s.y, 150 * sc, 44 * sc);
+        } else {
+          g.fillCircle(s.x, s.y, 34 * sc);
+          g.strokeCircle(s.x, s.y, 34 * sc);
+          g.lineStyle(3, COLORS.good, 0.35);
+          g.lineBetween(s.x, CONFIG.HUD_HEIGHT, s.x, s.y - 34 * sc);
+          g.lineStyle(3, COLORS.good, 0.7);
+        }
+      });
+    }
+  }
+
+  private onDragEnd(p: Phaser.Input.Pointer): void {
+    const d = this.drag;
+    if (!d || p.id !== d.pointerId) return;
+    if (this.paused || this.ended) {
+      this.cancelDrag();
+      return;
+    }
+    this.updateDrag(p); // 놓는 순간의 원장님 위치와 기구 점유 상태로 다시 검사
+    this.drag = null;
+    this.drawZones(null);
+    if (isBuff(d.type)) {
+      if (d.valid && this.brain.applyBuff(d.type)) {
+        d.ghost.destroy();
+        this.showBuff(d.type, d.pos);
+      } else {
+        this.returnGhost(d);
+        this.toast.show(this.brain.buffCooldown(d.type) > 0 ? STR.buffCooldown(this.brain.buffCooldown(d.type))
+          : d.type === 'chalk' ? STR.toastChalkMiss : STR.toastCoachMiss);
+      }
+      return;
+    }
+    if (!d.valid) {
+      if (d.reason === 'full') {
+        const def = EQUIPMENT[d.type];
+        this.toast.show(def.zone === 'floor' ? STR.toastFloorFull(CONFIG.MAX_FLOOR_EQUIPMENT) : STR.toastSlotFull);
+      } else if (d.reason === 'slotTaken') {
+        this.toast.show(STR.toastSlotFull);
+      }
+      this.returnGhost(d);
+      return;
+    }
+    d.ghost.destroy();
+    this.place(d.type, d.pos, d.slot);
+  }
+
+  /** 무효 위치: 툴바로 되돌아간다 */
+  private returnGhost(d: Drag): void {
+    const to = this.toolbar.iconWorldPos(d.type);
+    this.tweens.add({
+      targets: d.ghost, x: to.x, y: to.y + 40, scale: 0.4, alpha: 0, duration: 260, ease: 'Quad.easeIn',
+      onComplete: () => d.ghost.destroy(),
+    });
+  }
+
+  private cancelDrag(): void {
+    this.drag?.ghost.destroy();
+    this.drag = null;
+    this.drawZones(null);
+  }
+
+  private showBuff(id: BuffId, pos: Point): void {
+    if (id === 'chalk') {
+      const c = this.view.bodyCenter;
+      this.fx.chalkAt(c.x, c.y - 30);
+      audio.play('poof');
+      this.toast.show(STR.toastChalk, CONFIG.BUFF_DURATION_SEC * 1000);
+    } else {
+      this.coaches.push(new Coach(this, id, pos));
+      const messages = BUFFS[id].messages;
+      const visits = this.coachVisits[id]++;
+      this.toast.show(visits === 0 ? messages[0] : pick(messages.slice(1)), CONFIG.BUFF_DURATION_SEC * 1000);
+      audio.play('pop');
+    }
+    this.toolbar.refreshBuffs(id => this.brain.buffRemaining(id), id => this.brain.buffCooldown(id));
+  }
+
+  private place(type: EquipmentId, pos: Point, slot: number): void {
+    const eq = new Equipment(this, type, { ...pos }, slot);
+    this.equipment.push(eq);
+    eq.dropIn(this.fx, () => {
+      if (eq.removed || this.ended) return;
+      this.landed.add(eq.id);
+      audio.play('thud');
+      if (eq.def.heavy) this.cameras.main.shake(140, 0.006);
+      this.brain.onEquipmentPlaced();
+    });
+  }
+
+  // ------------------------------------------------------------ 진행·종료
+
+  private clear(): void {
+    if (this.ended) return;
+    this.ended = true;
+    this.toolbar.enabled = false;
+    this.cancelDrag();
+    this.brain.celebrate();
+    audio.play('fanfare');
+    this.toast.show(STR.toastWodDone, CONFIG.CLEAR_TO_RESULT_MS, '#3ddc84');
+    const c = this.view.bodyCenter;
+    this.fx.starsAt(c.x, c.y - 60, 16);
+    const time = this.elapsed;
+    const wod = this.wod!;
+    const prevBest = save.best(wod.id);
+    const isBest = save.recordClear(wod.id, wod.level, time);
+    this.time.delayedCall(CONFIG.CLEAR_TO_RESULT_MS, () => {
+      const data: ResultData = { level: wod.level, cleared: true, timeSec: time, isBest, best: prevBest };
+      this.goResult(data);
+    });
+  }
+
+  private fail(reason: 'timeout' | 'fainted'): void {
+    if (this.ended) return;
+    this.ended = true;
+    this.toolbar.enabled = false;
+    this.cancelDrag();
+    audio.play('fail');
+    if (reason === 'timeout') this.toast.show(STR.failTimeout, CONFIG.FAINT_TO_RESULT_MS, '#ff5a5a');
+    const data: ResultData = {
+      level: this.wod?.level ?? null, cleared: false, reason, timeSec: this.elapsed, isBest: false,
+      best: this.wod ? save.best(this.wod.id) : undefined,
+    };
+    this.time.delayedCall(CONFIG.FAINT_TO_RESULT_MS, () => this.goResult(data));
+  }
+
+  private goResult(data: ResultData): void {
+    this.cameras.main.fadeOut(250, 0, 0, 0);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start('Result', data));
+  }
+
+  private toggleMute(): void {
+    const m = !save.muted;
+    save.setMuted(m);
+    audio.setMuted(m);
+    this.hud.setMuted(m);
+  }
+
+  // ------------------------------------------------------------ 일시정지
+
+  setPaused(on: boolean): void {
+    if (on === this.paused) return;
+    if (on && this.ended) return;
+    this.paused = on;
+    if (on) {
+      this.cancelDrag();
+      this.tweens.pauseAll();
+      this.anims.pauseAll();
+      this.time.paused = true;
+      this.toolbar.enabled = false;
+      this.showPauseLayer();
+    } else {
+      this.tweens.resumeAll();
+      this.anims.resumeAll();
+      this.time.paused = false;
+      this.toolbar.enabled = true;
+      this.pauseLayer?.destroy();
+      this.pauseLayer = undefined;
+      audio.resume();
+    }
+  }
+
+  private showPauseLayer(): void {
+    const W = CONFIG.logicalWidth;
+    const H = CONFIG.logicalHeight;
+    const dim = this.add.rectangle(0, 0, W, H, 0x000000, 0.7).setOrigin(0).setInteractive();
+    const title = this.add.text(W / 2, H * 0.36, STR.paused, { fontFamily: FONT, fontSize: '64px', color: '#fff' }).setOrigin(0.5);
+    const mk = (y: number, label: string, color: number, fn: () => void) => {
+      const g = this.add.graphics();
+      g.fillStyle(color, 1);
+      g.fillRoundedRect(-170, -42, 340, 84, 24);
+      const t = this.add.text(0, 0, label, { fontFamily: FONT, fontSize: '36px', color: '#fff' }).setOrigin(0.5);
+      const c = this.add.container(W / 2, y, [g, t]).setSize(340, 84).setInteractive({ useHandCursor: true });
+      c.on('pointerup', () => {
+        audio.unlock();
+        audio.play('pop');
+        fn();
+      });
+      return c;
+    };
+    const resume = mk(H * 0.5, STR.resume, COLORS.accentBlue, () => this.setPaused(false));
+    const exit = mk(H * 0.5 + 110, STR.toLevelSelect, 0x444c56, () => {
+      this.paused = false;
+      this.time.paused = false;
+      this.tweens.resumeAll();
+      this.anims.resumeAll();
+      this.scene.start('LevelSelect');
+    });
+    this.pauseLayer = this.add.container(0, 0, [dim, title, resume, exit]).setDepth(DEPTH.overlay);
+  }
+
+  // ------------------------------------------------------------ 매 프레임
+
+  update(_time: number, deltaMs: number): void {
+    if (this.paused) return;
+    // 탭 전환 등으로 튄 프레임은 잘라낸다 (delta time 기반)
+    const dt = (Math.min(deltaMs, 100) / 1000) * TIME_SCALE;
+
+    if (!this.ended) {
+      this.elapsed += dt;
+      if (this.wod) {
+        const remain = this.wod.timeCapSec - this.elapsed;
+        this.hud.setTime(remain);
+        if (!this.timeWarned && remain <= CONFIG.TIME_LOW_WARNING_SEC) {
+          this.timeWarned = true;
+          this.toast.show(STR.toastTimeLow, CONFIG.TOAST_MS, '#ffc53d');
+        }
+        if (remain <= 0) this.fail('timeout');
+      } else {
+        this.hud.setTime(null);
+      }
+    }
+
+    if (!this.ended) this.brain.update(dt);
+    let coachLeft = false;
+    this.coaches = this.coaches.filter(coach => {
+      if (this.ended) { coach.destroy(); return false; }
+      const present = coach.update(dt);
+      if (!present) coachLeft = true;
+      return present;
+    });
+    if (coachLeft) this.toast.show(`${STR.coachLeft}\n${STR.wonjangRelaxed}`, CONFIG.BUFF_DURATION_SEC * 1000);
+    this.toolbar.refreshBuffs(id => this.brain.buffRemaining(id), id => this.brain.buffCooldown(id));
+    this.view.update(dt);
+    this.toolbar.update(dt);
+    this.hud.setBurnout(this.brain.burnout);
+
+    if (this.prodPressedMs > 0) {
+      this.prodPressedMs -= deltaMs;
+      if (this.prodPressedMs <= 0) this.drawProdButton(false);
+    }
+
+    // 번아웃 70 이상: 붉은 비네트 맥동
+    const warn = this.brain.burnout >= CONFIG.BURNOUT_WARNING && this.brain.state !== 'CELEBRATING';
+    const target = warn ? 0.45 + 0.35 * Math.sin(this.time.now / 180) : 0;
+    this.vignette.setAlpha(Phaser.Math.Linear(this.vignette.alpha, target, Math.min(1, dt * 8)));
+
+    if (this.debugGfx) this.drawDebug();
+  }
+
+  private drawDebug(): void {
+    const g = this.debugGfx!;
+    g.clear();
+    g.lineStyle(2, 0x00ff00, 0.9);
+    g.strokePoints(CONFIG.FLOOR_POLYGON, true);
+    for (const s of CONFIG.RIG_SLOT_POINTS) {
+      g.lineStyle(2, 0x00aaff, 1);
+      g.strokeCircle(s.x, s.y, 10);
+    }
+    for (const s of CONFIG.ROPE_ANCHOR_POINTS) {
+      g.lineStyle(2, 0xffaa00, 1);
+      g.strokeCircle(s.x, s.y, 10);
+    }
+    for (const e of this.equipment) e.debugDraw(g);
+    g.fillStyle(0xff0000, 1);
+    g.fillCircle(this.brain.pos.x, this.brain.pos.y, 5);
+  }
+}

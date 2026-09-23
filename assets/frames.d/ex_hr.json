@@ -1,0 +1,31 @@
+{
+  "anims": {
+    "wj_thruster": {
+      "fps": 5, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "thruster_2", "box": [0,0,1024,1536], "scale": 0.9},
+        {"src": "thruster_1", "box": [0,0,1024,1536]},
+        {"src": "thruster_3", "box": [0,0,1024,1536]},
+        {"src": "thruster_1", "box": [0,0,1024,1536]}
+      ]
+    },
+    "wj_devilpress": {
+      "fps": 4, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "devilpress_1", "box": [0,0,1024,1536], "scale": 0.73},
+        {"src": "devilpress_2", "box": [0,0,1024,1536], "scale": 0.85, "anchor": [860, 1097]},
+        {"src": "devilpress_3", "box": [0,0,1024,1536], "scale": 0.73},
+        {"src": "devilpress_4", "box": [0,0,1024,1536], "scale": 0.95}
+      ]
+    },
+    "wj_jumprope": {
+      "fps": 8, "repeat": -1, "yoyo": false,
+      "frames": [
+        {"src": "jumprope_1", "box": [0,0,1024,1536]},
+        {"src": "jumprope_2", "box": [0,0,1024,1536]},
+        {"src": "jumprope_3", "box": [0,0,1024,1536]}
+      ]
+    }
+  },
+  "images": {}
+}

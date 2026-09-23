@@ -1,0 +1,12 @@
+node_modules
+dist
+*.log
+.DS_Store
+artifacts
+.netlify
+.claude/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc

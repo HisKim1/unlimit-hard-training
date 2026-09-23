@@ -1,0 +1,39 @@
+{
+  "anims": {
+    "wj_deadlift": {
+      "fps": 2.5, "repeat": -1, "yoyo": false, "scale": 0.8883,
+      "frames": [
+        {"src": "deadlift_1", "box": [0, 0, 941, 1672]},
+        {"src": "deadlift_2", "box": [0, 0, 941, 1672]}
+      ]
+    },
+    "wj_pullup": {
+      "fps": 2.5, "repeat": -1, "yoyo": false, "scale": 0.8883,
+      "frames": [
+        {"src": "pullup_1", "box": [130, 0, 809, 1672], "anchor": [469, 242]},
+        {"src": "pullup_2", "box": [130, 0, 809, 1672], "anchor": [469, 587]}
+      ]
+    },
+    "wj_reels": {
+      "fps": 1.2, "repeat": -1, "yoyo": false, "scale": 0.8883,
+      "frames": [
+        {"src": "reels_1", "box": [0, 0, 941, 1672], "anchor": [556, 1533]},
+        {"src": "reels_2", "box": [0, 0, 941, 1672], "anchor": [565, 1558]}
+      ]
+    },
+    "wj_row": {
+      "fps": 2.5, "repeat": -1, "yoyo": false, "scale": 0.8883,
+      "frames": [
+        {"src": "row_1", "box": [0, 0, 941, 1672], "anchor": [160, 1440]},
+        {"src": "row_2", "box": [0, 0, 941, 1672], "anchor": [180, 1490]}
+      ]
+    },
+    "wj_bike": {
+      "fps": 8, "repeat": -1, "yoyo": false, "scale": 0.8883,
+      "frames": [
+        {"src": "bike_1", "box": [0, 0, 941, 1672], "anchor": [270, 1555]}
+      ]
+    }
+  },
+  "images": {}
+}

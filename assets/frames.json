@@ -1,0 +1,339 @@
+{
+ "_comment": "크롭 박스는 원본 시트 좌표 [x0,y0,x1,y1]. scale은 서 있는 캐릭터 키가 약 190px이 되도록 맞춘 값. globalScale 은 전체 빌드에서만 곱하는 텍스처 배율(src/config.ts TEXTURE_SCALE 과 같아야 함).",
+ "globalScale": 1.15,
+ "background": {
+  "file": "raw/box_background.png",
+  "size": [
+   720,
+   1280
+  ]
+ },
+ "sources": {
+  "sheet_a": {
+   "file": "raw/sheet_a.png",
+   "scale": 1.173
+  },
+  "sheet_b": {
+   "file": "raw/sheet_b.png",
+   "scale": 1.05,
+   "defringe": true
+  },
+  "sheet_c": {
+   "file": "raw/sheet_c.png",
+   "scale": 0.7,
+   "defringe": true
+  },
+  "sheet_d": {
+   "file": "raw/sheet_d.png",
+   "scale": 0.59,
+   "defringe": true
+  },
+  "sheet_e": {
+   "file": "raw/sheet_e.png",
+   "scale": 1.267,
+   "defringe": true
+  },
+  "walk_front_1": {
+   "file": "raw/walk_front_1.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "walk_front_2": {
+   "file": "raw/walk_front_2.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "walk_front_3": {
+   "file": "raw/walk_front_3.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "walk_front_4": {
+   "file": "raw/walk_front_4.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "walk_front_5": {
+   "file": "raw/walk_front_5.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "walk_back_1": {
+   "file": "raw/walk_back_1.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "walk_back_2": {
+   "file": "raw/walk_back_2.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "walk_back_3": {
+   "file": "raw/walk_back_3.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "walk_back_4": {
+   "file": "raw/walk_back_4.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "walk_back_5": {
+   "file": "raw/walk_back_5.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "pose_idle_tired": {
+   "file": "raw/pose_idle_tired.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "pose_gave_up": {
+   "file": "raw/pose_gave_up.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "pose_getup_kneel": {
+   "file": "raw/pose_getup_kneel.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "pose_getup_knees": {
+   "file": "raw/pose_getup_knees.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "pose_fainted": {
+   "file": "raw/pose_fainted.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "pose_clear": {
+   "file": "raw/pose_clear.png",
+   "scale": 0.1288,
+   "isolate": false
+  },
+  "icon_kettlebell": {
+   "file": "raw/icon_kettlebell.png",
+   "scale": 1.0,
+   "isolate": false
+  },
+  "icon_mat": {
+   "file": "raw/icon_mat.png",
+   "scale": 1.0,
+   "isolate": false
+  },
+  "icon_rope": {
+   "file": "raw/icon_rope.png",
+   "scale": 1.0,
+   "isolate": false
+  },
+  "thruster_1": {
+   "file": "raw/thruster_1.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "thruster_2": {
+   "file": "raw/thruster_2.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "thruster_3": {
+   "file": "raw/thruster_3.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "devilpress_1": {
+   "file": "raw/devilpress_1.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "devilpress_2": {
+   "file": "raw/devilpress_2.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "devilpress_3": {
+   "file": "raw/devilpress_3.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "devilpress_4": {
+   "file": "raw/devilpress_4.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "jumprope_1": {
+   "file": "raw/jumprope_1.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "jumprope_2": {
+   "file": "raw/jumprope_2.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "jumprope_3": {
+   "file": "raw/jumprope_3.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "boxjump_1": {
+   "file": "raw/boxjump_1.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "boxjump_2": {
+   "file": "raw/boxjump_2.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "boxjump_3": {
+   "file": "raw/boxjump_3.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "wallball_1": {
+   "file": "raw/wallball_1.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "wallball_2": {
+   "file": "raw/wallball_2.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "wallball_3": {
+   "file": "raw/wallball_3.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "ringmu_1": {
+   "file": "raw/ringmu_1.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "ringmu_2": {
+   "file": "raw/ringmu_2.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "ringmu_3": {
+   "file": "raw/ringmu_3.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "icon_jumprope": {
+   "file": "raw/icon_jumprope.png",
+   "scale": 1.0,
+   "isolate": false
+  },
+  "deadlift_1": {
+   "file": "raw/deadlift_1.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "deadlift_2": {
+   "file": "raw/deadlift_2.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "pullup_1": {
+   "file": "raw/pullup_1.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "pullup_2": {
+   "file": "raw/pullup_2.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "reels_1": {
+   "file": "raw/reels_1.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "reels_2": {
+   "file": "raw/reels_2.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "row_1": {
+   "file": "raw/row_1.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "row_2": {
+   "file": "raw/row_2.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "bike_1": {
+   "file": "raw/bike_1.png",
+   "scale": 0.145,
+   "isolate": false
+  },
+  "bike2_1": {
+   "file": "raw/bike2_1.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "bike2_2": {
+   "file": "raw/bike2_2.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "bike2_3": {
+   "file": "raw/bike2_3.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "situp_1": {
+   "file": "raw/situp_1.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "situp_2": {
+   "file": "raw/situp_2.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "situp_3": {
+   "file": "raw/situp_3.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "pushup_1": {
+   "file": "raw/pushup_1.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "pushup_2": {
+   "file": "raw/pushup_2.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "pushup_3": {
+   "file": "raw/pushup_3.png",
+   "scale": 0.148,
+   "isolate": false
+  },
+  "icon_jumprope2": {
+   "file": "raw/icon_jumprope2.png",
+   "scale": 1.0,
+   "isolate": false
+  },
+  "icon_wallball": {
+   "file": "raw/icon_wallball.png",
+   "scale": 1.0,
+   "isolate": false
+  },
+  "icon_box": {
+   "file": "raw/icon_box.png",
+   "scale": 1.0,
+   "isolate": false
+  }
+ },
+ "anims": {},
+ "images": {}
+}

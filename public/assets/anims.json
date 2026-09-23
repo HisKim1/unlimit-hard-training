@@ -1,0 +1,720 @@
+{
+ "anims": {
+  "coach_bong_front": {
+   "frames": [
+    "coach_bong_front_00",
+    "coach_bong_front_01",
+    "coach_bong_front_02",
+    "coach_bong_front_03",
+    "coach_bong_front_04"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.94,
+   "width": 174,
+   "height": 252
+  },
+  "coach_bong_back": {
+   "frames": [
+    "coach_bong_back_00",
+    "coach_bong_back_01",
+    "coach_bong_back_02",
+    "coach_bong_back_03"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9442,
+   "width": 158,
+   "height": 259
+  },
+  "coach_heo_front": {
+   "frames": [
+    "coach_heo_front_00",
+    "coach_heo_front_01",
+    "coach_heo_front_02",
+    "coach_heo_front_03",
+    "coach_heo_front_04"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9481,
+   "width": 173,
+   "height": 251
+  },
+  "coach_heo_back": {
+   "frames": [
+    "coach_heo_back_00",
+    "coach_heo_back_01",
+    "coach_heo_back_02",
+    "coach_heo_back_03",
+    "coach_heo_back_04"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9528,
+   "width": 153,
+   "height": 259
+  },
+  "wj_kb_swing": {
+   "frames": [
+    "wj_kb_swing_00",
+    "wj_kb_swing_01",
+    "wj_kb_swing_02",
+    "wj_kb_swing_03",
+    "wj_kb_swing_04"
+   ],
+   "fps": 10,
+   "repeat": -1,
+   "yoyo": true,
+   "originX": 0.5,
+   "originY": 0.9508,
+   "width": 180,
+   "height": 261
+  },
+  "wj_airsquat": {
+   "frames": [
+    "wj_airsquat_00",
+    "wj_airsquat_01",
+    "wj_airsquat_02"
+   ],
+   "fps": 6,
+   "repeat": -1,
+   "yoyo": true,
+   "originX": 0.5,
+   "originY": 0.9569,
+   "width": 140,
+   "height": 241
+  },
+  "wj_pushup": {
+   "frames": [
+    "wj_pushup_00",
+    "wj_pushup_01",
+    "wj_pushup_02",
+    "wj_pushup_03"
+   ],
+   "fps": 4,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.7349,
+   "width": 271,
+   "height": 291
+  },
+  "wj_situp": {
+   "frames": [
+    "wj_situp_00",
+    "wj_situp_01",
+    "wj_situp_02",
+    "wj_situp_03"
+   ],
+   "fps": 4,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.6887,
+   "width": 267,
+   "height": 369
+  },
+  "wj_pullup": {
+   "frames": [
+    "wj_pullup_00",
+    "wj_pullup_01"
+   ],
+   "fps": 2.5,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.2953,
+   "width": 110,
+   "height": 308
+  },
+  "wj_muscleup": {
+   "frames": [
+    "wj_muscleup_00",
+    "wj_muscleup_01",
+    "wj_muscleup_02"
+   ],
+   "fps": 5,
+   "repeat": -1,
+   "yoyo": true,
+   "originX": 0.5,
+   "originY": 0.4876,
+   "width": 147,
+   "height": 224
+  },
+  "wj_rope_climb": {
+   "frames": [
+    "wj_rope_climb_00",
+    "wj_rope_climb_01",
+    "wj_rope_climb_02",
+    "wj_rope_climb_03"
+   ],
+   "fps": 7,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9553,
+   "width": 177,
+   "height": 240
+  },
+  "wj_row": {
+   "frames": [
+    "wj_row_00",
+    "wj_row_01"
+   ],
+   "fps": 2.5,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.8512,
+   "width": 239,
+   "height": 264
+  },
+  "wj_ski": {
+   "frames": [
+    "wj_ski_00",
+    "wj_ski_01",
+    "wj_ski_02",
+    "wj_ski_03"
+   ],
+   "fps": 6,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9587,
+   "width": 197,
+   "height": 249
+  },
+  "wj_bike": {
+   "frames": [
+    "wj_bike_00",
+    "wj_bike_01",
+    "wj_bike_02",
+    "wj_bike_03"
+   ],
+   "fps": 5,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9487,
+   "width": 230,
+   "height": 271
+  },
+  "wj_reels": {
+   "frames": [
+    "wj_reels_00",
+    "wj_reels_01"
+   ],
+   "fps": 1.2,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.903,
+   "width": 176,
+   "height": 260
+  },
+  "wj_reels_tripod": {
+   "frames": [
+    "wj_reels_tripod_00",
+    "wj_reels_tripod_01"
+   ],
+   "fps": 2,
+   "repeat": -1,
+   "yoyo": true,
+   "originX": 0.5,
+   "originY": 0.9637,
+   "width": 203,
+   "height": 251
+  },
+  "wj_thruster": {
+   "frames": [
+    "wj_thruster_00",
+    "wj_thruster_01",
+    "wj_thruster_02",
+    "wj_thruster_03"
+   ],
+   "fps": 5,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.8649,
+   "width": 184,
+   "height": 287
+  },
+  "wj_devilpress": {
+   "frames": [
+    "wj_devilpress_00",
+    "wj_devilpress_01",
+    "wj_devilpress_02",
+    "wj_devilpress_03"
+   ],
+   "fps": 4,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.7787,
+   "width": 257,
+   "height": 306
+  },
+  "wj_jumprope": {
+   "frames": [
+    "wj_jumprope_00",
+    "wj_jumprope_01",
+    "wj_jumprope_02"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9048,
+   "width": 191,
+   "height": 280
+  },
+  "wj_boxjump": {
+   "frames": [
+    "wj_boxjump_00",
+    "wj_boxjump_01",
+    "wj_boxjump_02"
+   ],
+   "fps": 4,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9636,
+   "width": 264,
+   "height": 229
+  },
+  "wj_wallball": {
+   "frames": [
+    "wj_wallball_00",
+    "wj_wallball_01",
+    "wj_wallball_02"
+   ],
+   "fps": 4,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9737,
+   "width": 156,
+   "height": 253
+  },
+  "wj_ringmu": {
+   "frames": [
+    "wj_ringmu_00",
+    "wj_ringmu_01",
+    "wj_ringmu_02"
+   ],
+   "fps": 3,
+   "repeat": -1,
+   "yoyo": true,
+   "originX": 0.5,
+   "originY": 0.3618,
+   "width": 184,
+   "height": 388
+  },
+  "wj_deadlift": {
+   "frames": [
+    "wj_deadlift_00",
+    "wj_deadlift_01"
+   ],
+   "fps": 2.5,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.8203,
+   "width": 161,
+   "height": 277
+  },
+  "floor_01": {
+   "frames": [
+    "floor_01_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.8915,
+   "width": 235,
+   "height": 121
+  },
+  "floor_02": {
+   "frames": [
+    "floor_02_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9474,
+   "width": 188,
+   "height": 238
+  },
+  "floor_03": {
+   "frames": [
+    "floor_03_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9258,
+   "width": 204,
+   "height": 185
+  },
+  "floor_04": {
+   "frames": [
+    "floor_04_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.8793,
+   "width": 278,
+   "height": 146
+  },
+  "floor_05": {
+   "frames": [
+    "floor_05_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9021,
+   "width": 238,
+   "height": 142
+  },
+  "floor_06": {
+   "frames": [
+    "floor_06_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9412,
+   "width": 151,
+   "height": 165
+  },
+  "floor_07": {
+   "frames": [
+    "floor_07_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9408,
+   "width": 244,
+   "height": 148
+  },
+  "floor_08": {
+   "frames": [
+    "floor_08_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.933,
+   "width": 187,
+   "height": 157
+  },
+  "floor_09": {
+   "frames": [
+    "floor_09_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.918,
+   "width": 288,
+   "height": 166
+  },
+  "floor_10": {
+   "frames": [
+    "floor_10_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.933,
+   "width": 160,
+   "height": 201
+  },
+  "floor_ghost": {
+   "frames": [
+    "floor_ghost_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9561,
+   "width": 314,
+   "height": 165
+  },
+  "wj_walk_front": {
+   "frames": [
+    "wj_walk_front_00",
+    "wj_walk_front_01",
+    "wj_walk_front_02",
+    "wj_walk_front_03",
+    "wj_walk_front_04"
+   ],
+   "fps": 7,
+   "repeat": -1,
+   "yoyo": true,
+   "originX": 0.5,
+   "originY": 0.8999,
+   "width": 150,
+   "height": 266
+  },
+  "wj_walk_back": {
+   "frames": [
+    "wj_walk_back_00",
+    "wj_walk_back_01",
+    "wj_walk_back_02",
+    "wj_walk_back_03",
+    "wj_walk_back_04"
+   ],
+   "fps": 7,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.8955,
+   "width": 161,
+   "height": 264
+  },
+  "wj_idle": {
+   "frames": [
+    "wj_idle_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9367,
+   "width": 151,
+   "height": 256
+  },
+  "wj_gaveup": {
+   "frames": [
+    "wj_gaveup_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9495,
+   "width": 159,
+   "height": 256
+  },
+  "wj_getup": {
+   "frames": [
+    "wj_getup_00",
+    "wj_getup_01"
+   ],
+   "fps": 3,
+   "repeat": 0,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.8854,
+   "width": 154,
+   "height": 266
+  },
+  "wj_fainted": {
+   "frames": [
+    "wj_fainted_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.6718,
+   "width": 148,
+   "height": 256
+  },
+  "wj_clear": {
+   "frames": [
+    "wj_clear_00"
+   ],
+   "fps": 8,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.9153,
+   "width": 154,
+   "height": 256
+  }
+ },
+ "images": {
+  "icon_bong": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 93,
+   "height": 112
+  },
+  "icon_heo": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 100,
+   "height": 112
+  },
+  "icon_kettlebell": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 86,
+   "height": 112
+  },
+  "icon_mat": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 112,
+   "height": 68
+  },
+  "icon_rope": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 47,
+   "height": 112
+  },
+  "icon_dumbbell": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 112,
+   "height": 90
+  },
+  "icon_barbell": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 112,
+   "height": 46
+  },
+  "icon_rower": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 112,
+   "height": 67
+  },
+  "icon_bike": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 83,
+   "height": 112
+  },
+  "icon_ski": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 64,
+   "height": 112
+  },
+  "icon_pullup": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 112,
+   "height": 107
+  },
+  "equip_kettlebell": {
+   "originX": 0.5,
+   "originY": 1.0,
+   "width": 86,
+   "height": 127
+  },
+  "equip_dumbbell": {
+   "originX": 0.5,
+   "originY": 1.0,
+   "width": 105,
+   "height": 85
+  },
+  "equip_barbell": {
+   "originX": 0.5,
+   "originY": 1.0,
+   "width": 209,
+   "height": 86
+  },
+  "equip_rower": {
+   "originX": 0.18,
+   "originY": 1.0,
+   "width": 138,
+   "height": 83
+  },
+  "equip_bike": {
+   "originX": 0.3,
+   "originY": 1.0,
+   "width": 117,
+   "height": 159
+  },
+  "equip_ski": {
+   "originX": 0.5,
+   "originY": 1.0,
+   "width": 103,
+   "height": 179
+  },
+  "equip_mat": {
+   "originX": 0.5,
+   "originY": 1.0,
+   "width": 152,
+   "height": 88
+  },
+  "equip_pullup": {
+   "originX": 0.5,
+   "originY": 1.0,
+   "width": 240,
+   "height": 230
+  },
+  "equip_rope": {
+   "originX": 0.5,
+   "originY": 0.0,
+   "width": 24,
+   "height": 333
+  },
+  "equip_box": {
+   "originX": 0.5,
+   "originY": 1.0,
+   "width": 92,
+   "height": 83
+  },
+  "icon_jumprope": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 112,
+   "height": 106
+  },
+  "icon_wallball": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 103,
+   "height": 104
+  },
+  "icon_box": {
+   "originX": 0.5,
+   "originY": 0.5,
+   "width": 112,
+   "height": 101
+  },
+  "equip_jumprope": {
+   "originX": 0.5,
+   "originY": 1.0,
+   "width": 76,
+   "height": 72
+  },
+  "equip_wallball": {
+   "originX": 0.5,
+   "originY": 1.0,
+   "width": 39,
+   "height": 39
+  }
+ }
+}
