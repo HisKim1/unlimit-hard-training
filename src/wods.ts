@@ -105,7 +105,7 @@ const WOD_LIST: WodSpec[] = [
     ],
   },
   {
-    id: 'kalsu', name: 'Kalsu', nameKo: '칼수', original: '스러스터 100개, 매분 시작마다 버피 5개', timeCapSec: 300, bonus: true,
+    id: 'kalsu', name: 'Kalsu', nameKo: '칼수', original: '스러스터 100개, 매분 시작마다 버피 5개', timeCapSec: 100, bonus: true,
     emom: { kind: 'interrupt', intervalSec: 10, interrupt: { anim: 'wj_burpee', label: '버피 5개', durationSec: 3 } },
     requirements: [
       { equipment: 'barbell', sessions: 5, labels: rep('스러스터 20개', 5) },

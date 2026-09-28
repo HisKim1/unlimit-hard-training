@@ -22,6 +22,8 @@ $env:URL = 'http://localhost:4173/'
 node tools/regression.mjs          # 에셋·종료·입력·회전·저장 회귀 검사
 node tools/e2e.mjs artifacts       # 실제 드래그·재촉으로 Fran 클리어 및 저장 확인
 node tools/autoplay.mjs 1,2,3,4,5,6,7,8 4 artifacts
+node tools/emom-check.mjs          # EMOM 벨·버피·노랩·탈락 사유
+node tools/autoplay.mjs 3 4 artifacts assist   # 도움 모드(능동 재촉·버프 사용) 자동 플레이
 python tools/test_sprites.py       # 기구 이미지 좌우 반전 검사
 ```
 

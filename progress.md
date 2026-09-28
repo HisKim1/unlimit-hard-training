@@ -1,3 +1,10 @@
+- 2026-09-28 EMOM · 성지윤 WOD · 레벨 재배치 · 나태 경고 (브랜치 feature/emom-wods, 미배포)
+  - 레벨 17개: Fran, Karen, 데빌프레스나 1000개 시켜ㅠ, Diane, Chelsea(EMOM), Jackie, Tommy V, Annie, Kalsu(EMOM), Helen, Jerry, Cindy, Christine, Fight Gone Bad(EMOM), Kelly, Nate, Murph. 레벨은 wods.ts 배열 순서로 매김.
+  - EMOM: 벨 → 3초 안에 재촉 5번, 못 하면 탈락. 칼수형은 제자리 버피(조합 프레임 wj_burpee) 후 하던 세션 복귀. 순환형은 벨 3초 전 게으름 경고, 기구 없으면 노랩 3번 후 탈락, 구간 미완료 탈락.
+  - Lv3 성지윤 WOD: 덤벨 10세션, 기본 10초, 속도 = (1/8)^진행률. 응원 이름 성지윤 고정 + 전용 대사.
+  - 침팬지 0.5%, 나태 경고(바닥 5초 무재촉) 후 2초 안 5번 미만이면 그 판 1%.
+  - 검증: vitest 전체, build, regression, emom-check, cheer-check, chimp-check, audio-check(iPhone skip), test_sprites, autoplay(Lv3 assist 포함) 통과. 실제 iPhone은 미검증.
+
 Original prompt: 코치가 돌아다니는 시간을 3초로 늘리자. 그리고 나가는 속도를 늦춰줘 천천히 나가게.
 
 - 종코 출시: 사용자 Dropship ZIP에서 투명 PNG 23장 다운로드, assets/jong에 원본 보관. 정면/측면/대각선 애니메이션 및 얼굴 아이콘. 물음표/업데이트 예정 제거. 5초간 자연 멘탈 회복 2배, 독립 10초 쿨타임. 기존 코치의 3초 배회/느린 퇴장 유지.

@@ -3,7 +3,7 @@
 // 자동 플레이어는 필요한 기구만 놓고, 뻗으면 바로 재촉하고, 능동 재촉(번아웃 증가)은 하지 않는다.
 import { chromium } from 'playwright-core';
 
-const LEVELS = (process.argv[2] || '1,2,3,4,5,6,7,8').split(',').map(Number);
+const LEVELS = (process.argv[2] || '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17').split(',').map(Number);
 const SPEED = Number(process.argv[3] || 2);
 const OUT = process.argv[4] || '.';
 const MODE = process.argv[5] || 'basic'; // assist: 능동 재촉 + 탄마·종코·허코 사용
@@ -36,13 +36,13 @@ async function drag(x0, y0, x1, y1) {
   if (y1 < y0 - 50) {
     // 세로로 먼저 들어 올려 툴바 스크롤과 기구 드래그를 구분한다.
     await page.mouse.move(a.x, a.y - 20);
-    await sleep(30);
+    await sleep(15);
   }
   for (let i = 1; i <= 8; i++) {
     await page.mouse.move(a.x + ((b.x - a.x) * i) / 8, a.y + ((b.y - a.y) * i) / 8);
-    await sleep(10);
+    await sleep(5);
   }
-  await sleep(120); // 손을 멈춘 뒤 놓아 툴바 관성이 다음 아이콘 선택을 밀지 않게 함
+  await sleep(30); // 손을 멈춘 뒤 놓아 툴바 관성이 다음 아이콘 선택을 밀지 않게 함
   await page.mouse.up();
 }
 async function snap() {
@@ -62,6 +62,11 @@ async function snap() {
       placed: s.equipment.filter((e) => !e.removed).map((e) => ({ type: e.type, remaining: e.remaining, zone: e.def.zone, x: e.pos.x, y: e.pos.y })),
       order: ['barbell', 'pullup', 'rower', 'dumbbell', 'jumprope', 'kettlebell', 'bike', 'wallball', 'box', 'mat', 'ski', 'rope', 'rings'],
       cap: s.wod ? s.wod.timeCapSec : 0,
+      emom: s.emom ? {
+        open: s.emom.windowOpen, rotate: s.wod.emom.kind === 'rotate', interval: s.emom.interval,
+        cur: s.emom.station(s.emom.interval), next: s.emom.station(s.emom.interval + 1), done: s.intervalDone,
+        sec: s.emom.secToNextBell, // 벨까지 남은 시간(게임초): 배치 중 벨을 통째로 놓치는 것을 막는 데 씀
+      } : null,
     };
   });
 }
@@ -79,9 +84,9 @@ async function placeOne(type, s) {
   const scroll = await page.evaluate(() => window.__game.scene.getScene('Game').toolbar.scroll);
   let x = itemX(idx, scroll);
   for (let attempt = 0; (x < 60 || x > 660) && attempt < 6; attempt++) {
-    const dx = Math.max(-280, Math.min(280, 360 - x));
+    const dx = Math.max(-600, Math.min(600, 360 - x));
     await drag(360, 1200, 360 + dx, 1203);
-    await sleep(600);
+    await sleep(40);
     const sc2 = await page.evaluate(() => window.__game.scene.getScene('Game').toolbar.scroll);
     x = itemX(idx, sc2);
   }
@@ -91,7 +96,7 @@ async function placeOne(type, s) {
   const before = s.placed.filter(p => p.type === type).length;
   for (const [tx, ty] of spots) {
     await drag(x, 1180, tx, ty); // 손가락 위치가 실제 배치 위치
-    await sleep(80);
+    await sleep(40);
     const n = (await snap()).placed?.filter(p => p.type === type).length ?? 0;
     if (n > before) return true;
   }
@@ -109,7 +114,7 @@ for (const level of LEVELS) {
     const g = window.__game;
     g.scene.getScenes(true)[0].scene.start('Game', { level: lv });
   }, level);
-  await sleep(1200);
+  await sleep(50);
   let s = await snap();
   let result = 'timeout(test)';
   const t0 = Date.now();
@@ -127,10 +132,17 @@ for (const level of LEVELS) {
       const r = await page.evaluate(() => {
         const g = window.__game;
         const s = g.scene.getScene('Game');
-        return { ended: s.ended, elapsed: s.elapsed, state: s.brain?.state, complete: s.progress?.complete };
+        return { ended: s.ended, elapsed: s.elapsed, state: s.brain?.state, complete: s.progress?.complete, reason: s.failReason };
       });
-      result = r.complete ? `CLEAR ${r.elapsed.toFixed(1)}s` : `FAIL(${r.state}) ${r.elapsed.toFixed(1)}s`;
+      result = r.complete ? `CLEAR ${r.elapsed.toFixed(1)}s` : `FAIL(${r.reason ?? r.state}) ${r.elapsed.toFixed(1)}s`;
       break;
+    }
+    if (s.emom?.open) {
+      for (let i = 0; i < 5; i++) {
+        await tap(608, 1040);
+        await sleep(Math.max(30, 130 / SPEED));
+      }
+      continue;
     }
     if (MODE === 'assist' && s.state === 'EXHAUSTED') {
       await page.evaluate(() => {
@@ -138,7 +150,7 @@ for (const level of LEVELS) {
         if (g.brain.buffCooldown('heo') === 0 && g.brain.applyBuff('heo')) g.showBuff('heo', g.brain.pos);
       });
     }
-    if (s.state === 'EXHAUSTED') {
+    if (s.state === 'EXHAUSTED' && !s.emom?.rotate) {
       await tap(608, 1040);
       prods++;
       await sleep(Math.max(60, 230 / SPEED));
@@ -155,8 +167,27 @@ for (const level of LEVELS) {
         if (g.brain.burnout > 20 && g.brain.buffCooldown('jong') === 0 && g.brain.applyBuff('jong')) g.showBuff('jong', g.brain.pos);
       });
     }
+    // 칼수형(비순환)은 배치 드래그(300~900ms)가 벨 창(SPEED=4 기준 실제 0.75초)을 통째로
+    // 삼킬 수 있어 벨이 임박하면 배치를 미룬다. 순환형은 반대로 벨이 열리기 전에 미리
+    // 놓아야 하므로(늦으면 노랩 유예 0.675초 안에 못 놓아 탈락) 여기서 미루지 않는다.
+    const bellSoon = !s.emom?.rotate && s.emom && s.emom.sec != null && s.emom.sec < SPEED * 1.2;
+    if (s.emom?.rotate) {
+      // 순환형: 이번 구간(아직 안 했으면)과 다음 구간 기구만 미리 놓는다
+      if (Date.now() - lastPlaceTry > 300) {
+        const want = [s.emom.done ? null : s.emom.cur, s.emom.next].filter(Boolean);
+        for (const t of want) {
+          if (!s.placed.some((p) => p.type === t)) {
+            lastPlaceTry = Date.now();
+            if (await placeOne(t, s)) placedCount++;
+            break;
+          }
+        }
+      }
+      await sleep(80);
+      continue;
+    }
     // 필요한 기구 보충
-    if (Date.now() - lastPlaceTry > 300) {
+    if (!bellSoon && Date.now() - lastPlaceTry > 300) {
       for (const r of s.req) {
         const avail = s.placed.filter((p) => p.type === r.eq).reduce((a, p) => a + p.remaining, 0);
         if (r.n - r.done > avail) {
