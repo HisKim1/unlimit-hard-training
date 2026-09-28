@@ -362,7 +362,9 @@ export class GameScene extends Phaser.Scene {
     const label = st ? STR.emomBellStation(EQUIPMENT[st].name, this.emom.prodCount, need) : STR.emomBellBurpee(this.emom.prodCount, need);
     this.bellBanner.update(label, this.emom.windowRemainingSec / CONFIG.EMOM_WINDOW_SEC);
     this.bellPulse = true;
-    this.prodBtn.setScale((this.prodPressedMs > 0 ? 0.94 : 1) * (1 + 0.07 * Math.abs(Math.sin(this.time.now / 90))));
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pulse = reducedMotion ? 1 : 1 + 0.07 * Math.abs(Math.sin(this.time.now / 90));
+    this.prodBtn.setScale((this.prodPressedMs > 0 ? 0.94 : 1) * pulse);
   }
 
   private pickFloorPose(tier: PoseTier, avoid?: string): string {
