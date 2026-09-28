@@ -157,6 +157,23 @@ try {
   assert.equal(pose, 'floor_06');
   console.log('PASS pose');
 
+  await start();
+  const burpee = await page.evaluate(() => {
+    const s = window.__game.scene.getScene('Game');
+    s.toast.box.setVisible(false);
+    s.view.interrupt = { anim: 'wj_burpee', label: '버피 5개' };
+    s.brain.beginInterrupt(3);
+    return { state: s.brain.state, label: s.view.labelText.text, labelVisible: s.view.labelBox.visible };
+  });
+  assert.deepEqual(burpee, { state: 'BURPEE', label: '버피 5개', labelVisible: true });
+  for (const i of [1, 2, 3]) {
+    await page.waitForTimeout(170);
+    await page.screenshot({ path: `artifacts/burpee-${i}.png` });
+  }
+  assert.equal(await page.evaluate(() => window.__game.scene.getScene('Game').view.animKey), 'wj_burpee');
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').brain.state !== 'BURPEE', null, { timeout: 5000 });
+  console.log('PASS burpee motion, label and return');
+
   const paused = await page.evaluate(() => {
     const s = window.__game.scene.getScene('Game');
     const p = { id: 0, x: 76, y: 1180, downTime: s.time.now };

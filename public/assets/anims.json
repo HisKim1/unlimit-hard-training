@@ -1,5 +1,23 @@
 {
  "anims": {
+  "wj_burpee": {
+   "frames": [
+    "wj_burpee_00",
+    "wj_burpee_01",
+    "wj_burpee_02",
+    "wj_burpee_03",
+    "wj_burpee_04",
+    "wj_burpee_05",
+    "wj_burpee_06"
+   ],
+   "fps": 12,
+   "repeat": -1,
+   "yoyo": false,
+   "originX": 0.5,
+   "originY": 0.7613,
+   "width": 271,
+   "height": 315
+  },
   "coach_bong_front": {
    "frames": [
     "coach_bong_front_00",

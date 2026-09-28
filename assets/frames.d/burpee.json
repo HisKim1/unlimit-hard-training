@@ -1,0 +1,18 @@
+{
+  "anims": {
+    "wj_burpee": {
+      "fps": 12,
+      "repeat": -1,
+      "frames": [
+        {"src": "pose_idle_tired", "box": [0, 0, 941, 1672]},
+        {"src": "pose_getup_kneel", "box": [0, 0, 941, 1672]},
+        {"src": "pushup_1", "box": [0, 0, 1024, 1536], "anchor": [250, 1233]},
+        {"src": "pushup_2", "box": [0, 0, 1024, 1536], "anchor": [300, 1120]},
+        {"src": "pushup_1", "box": [0, 0, 1024, 1536], "anchor": [250, 1233]},
+        {"src": "pose_getup_kneel", "box": [0, 0, 941, 1672]},
+        {"src": "pose_idle_tired", "box": [0, 0, 941, 1672]}
+      ]
+    }
+  },
+  "images": {}
+}

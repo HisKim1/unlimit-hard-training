@@ -12,6 +12,9 @@ import { STR } from '../strings';
 export const WALK_FACING = { front: 'left' as 'left' | 'right', back: 'right' as 'left' | 'right' };
 
 const ROPE_CLIMB_PX = 150;
+const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const HOP_SEC = 0.3;
+const HOP_PX = 28;
 
 export interface ExerciseView {
   eq: Equipment;
@@ -35,6 +38,9 @@ export class WonjangView {
   floorPose = 'floor_01';
   /** 지침 계수 (GameScene 이 매 프레임 넣는다). 운동 모션 재생 속도에 곱한다. */
   exerciseSpeed = 1;
+  /** 칼수형 EMOM 버피 표시 (GameScene 이 beginInterrupt 직전에 넣는다) */
+  interrupt: { anim: string; label: string } | null = null;
+  private hopT = -1;
   private animKey = '';
   private t = 0;
   private staggerMs = 0;
@@ -74,6 +80,10 @@ export class WonjangView {
       this.debugText = scene.add.text(0, 0, '', { fontFamily: 'monospace', fontSize: '16px', color: '#0f0', backgroundColor: '#000a' })
         .setOrigin(0.5, 1).setDepth(DEPTH.label + 10);
     }
+    // 버피 한 번 끝날 때마다 코드로 점프 (맨몸 점프 프레임이 없음)
+    this.sprite.on(Phaser.Animations.Events.ANIMATION_REPEAT, (anim: Phaser.Animations.Animation) => {
+      if (this.brain.state === 'BURPEE' && anim.key === this.interrupt?.anim && !reducedMotion()) this.hopT = 0;
+    });
     this.refreshAnim(true);
   }
 
@@ -90,6 +100,11 @@ export class WonjangView {
         break;
       case 'FAINTED':
         for (const d of this.dizzy) d.setVisible(true);
+        break;
+      case 'BURPEE':
+        this.labelText.setText(this.interrupt?.label ?? '').setColor('#ffffff');
+        this.labelBox.setVisible(true);
+        this.hopT = -1;
         break;
       case 'CELEBRATING':
         this.celebrateT = 0;
@@ -146,6 +161,8 @@ export class WonjangView {
         return ['wj_gaveup', 'wj_idle'];
       case 'FAINTED':
         return ['wj_fainted', 'floor_09', 'floor_01'];
+      case 'BURPEE':
+        return [this.interrupt?.anim ?? 'wj_burpee', 'wj_getup', 'wj_idle'];
       case 'CELEBRATING':
         return ['wj_clear', 'wj_idle'];
       default:
@@ -247,6 +264,14 @@ export class WonjangView {
       // 헐떡임: 살짝 부풀었다 줄었다
       bob = 0;
       s.setFlipX(this.facingLeft);
+    } else if (b.state === 'BURPEE') {
+      s.setFlipX(false);
+      if (this.hopT >= 0) {
+        this.hopT += dtSec;
+        const k = this.hopT / HOP_SEC;
+        if (k >= 1) this.hopT = -1;
+        else bob = -Math.sin(k * Math.PI) * HOP_PX;
+      }
     } else if (b.state === 'CELEBRATING') {
       // 축하 점프 4번 (발 위치 기준)
       this.celebrateT += dtSec;
@@ -288,8 +313,9 @@ export class WonjangView {
       this.labelBar.clear();
       this.labelBar.fillStyle(0x000000, 0.6);
       this.labelBar.fillRoundedRect(-w / 2, 4, w, 12, 6);
-      this.labelBar.fillStyle(this.exercise?.counts ? 0x3ddc84 : 0xff8080, 1);
-      this.labelBar.fillRoundedRect(-w / 2 + 2, 6, Math.max(4, (w - 4) * b.sessionProgress), 8, 4);
+      const burpee = b.state === 'BURPEE';
+      this.labelBar.fillStyle(burpee || this.exercise?.counts ? 0x3ddc84 : 0xff8080, 1);
+      this.labelBar.fillRoundedRect(-w / 2 + 2, 6, Math.max(4, (w - 4) * (burpee ? b.interruptProgress : b.sessionProgress)), 8, 4);
     }
     if (this.bubble.visible) this.bubble.setPosition(headX, Math.max(CONFIG.HUD_HEIGHT + 40, bounds.top - 40));
     if (b.state === 'FAINTED') {

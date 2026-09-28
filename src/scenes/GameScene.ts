@@ -267,6 +267,9 @@ export class GameScene extends Phaser.Scene {
       case 'sessionComplete':
         this.completeSession(e.equipmentId);
         break;
+      case 'exercisePaused':
+        this.view.endExercise(); // 기구 다시 보이기·라벨 해제. 복귀 때 startExercise 가 다시 온다
+        break;
       case 'sessionAborted':
         this.view.endExercise();
         break;
