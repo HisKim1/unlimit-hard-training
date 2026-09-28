@@ -73,6 +73,15 @@ const WOD_LIST: WodSpec[] = [
     ],
   },
   {
+    id: 'chelsea', name: 'Chelsea', nameKo: '첼시 (박스 변형)', original: 'EMOM 30분: 풀업 5, 푸쉬업 10, 스쿼트 15', timeCapSec: 165, bonus: true,
+    overrides: { mat: MOTION_PRESETS.pushup_squat },
+    emom: { kind: 'rotate', intervalSec: 15, rotation: ['pullup', 'mat'] },
+    requirements: [
+      { equipment: 'pullup', sessions: 5, labels: rep('풀업 5개', 5) },
+      { equipment: 'mat', sessions: 5, labels: rep('푸쉬업 10개 + 스쿼트 15개', 5) },
+    ],
+  },
+  {
     id: 'jackie', name: 'Jackie', nameKo: '재키', original: '1000m 로잉, 스러스터 50, 풀업 30', timeCapSec: 160,
     requirements: [
       { equipment: 'rower', sessions: 3, labels: ['로잉 334m', '로잉 333m', '로잉 333m'] },
@@ -133,6 +142,18 @@ const WOD_LIST: WodSpec[] = [
       { equipment: 'rower', sessions: 3, labels: rep('로잉 500m', 3) },
       { equipment: 'barbell', sessions: 3, labels: rep('데드리프트 12개', 3) },
       { equipment: 'box', sessions: 3, labels: rep('박스 점프 21개', 3) },
+    ],
+  },
+  {
+    id: 'fgb', name: 'Fight Gone Bad', nameKo: '파이트 곤 배드 (박스 변형)', shortName: 'FGB',
+    original: '3라운드, 각 1분: 월볼, SDHP, 박스 점프, 푸쉬 프레스, 로잉', timeCapSec: 240, bonus: true,
+    emom: { kind: 'rotate', intervalSec: 15, rotation: ['wallball', 'kettlebell', 'box', 'barbell', 'rower'] },
+    requirements: [
+      { equipment: 'wallball', sessions: 3, labels: rep('월볼 샷', 3) },
+      { equipment: 'kettlebell', sessions: 3, labels: rep('KB 스윙 (SDHP 대체)', 3) },
+      { equipment: 'box', sessions: 3, labels: rep('박스 점프', 3) },
+      { equipment: 'barbell', sessions: 3, labels: rep('스러스터 (푸쉬 프레스 대체)', 3) },
+      { equipment: 'rower', sessions: 3, labels: rep('로잉', 3) },
     ],
   },
   {

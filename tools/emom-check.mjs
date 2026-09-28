@@ -77,6 +77,69 @@ try {
   await page.screenshot({ path: 'artifacts/emom-missed.png' });
   console.log('PASS Kalsu: real taps, banner count, burpee, resume same session, window pause, missed bell result');
 
+  // ---------------- 순환형 (Chelsea, 2배속)
+  await open('?speed=2');
+  await startWod('chelsea');
+  assert.deepEqual(await game((s) => s.toolbar.items.filter((i) => i.highlight).map((i) => i.id)), ['pullup']);
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').toast.text.text === '풀업 바가 없어서 원장님이 게으름 피웁니다! 다음 기구를 배치해주세요!');
+  await game((s) => s.place('pullup', { x: 330, y: 700 }, 1));
+  await page.waitForTimeout(600);
+  assert.equal(await game((s) => s.brain.state), 'IDLE_REELS', 'waits for first bell');
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').emom.windowOpen);
+  assert.equal(await game((s) => s.bellBanner.text.text), '🔔 풀업 바! 0/5');
+  await tapProd(5);
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').brain.state === 'EXHAUSTED');
+  assert.equal(await game((s) => s.intervalDone), true);
+  const locked = await game((s) => { s.brain.lastProdMs = -Infinity; s.onProd(); return { count: s.brain.prodCount, toast: s.toast.text.text }; });
+  assert.deepEqual(locked, { count: 0, toast: '원장님이 벨을 기다리며 쉬는 중입니다.' });
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').toast.text.text === '맨몸 매트가 없어서 원장님이 게으름 피웁니다! 다음 기구를 배치해주세요!');
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').emom.windowOpen);
+  await tapProd(5);
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').noRep?.count === 1);
+  const seen = new Set([await game((s) => s.toast.text.text)]);
+  const noRepFrozen = await game((s) => { s.setPaused(true); return s.noRep.count; });
+  await page.waitForTimeout(1200);
+  assert.equal(await game((s) => s.noRep.count), noRepFrozen, 'no-rep pauses');
+  assert.equal(await page.evaluate(() => window.__game.scene.isActive('Result')), false);
+  await game((s) => s.setPaused(false));
+  await page.screenshot({ path: 'artifacts/emom-norep.png' });
+  while (!(await page.evaluate(() => window.__game.scene.isActive('Result')))) {
+    seen.add(await page.evaluate(() => window.__game.scene.getScene('Game').toast.text.text));
+    await page.waitForTimeout(100);
+  }
+  const lazyLine = '맨몸 매트가 없어서 원장님이 게으름 피웁니다! 다음 기구를 배치해주세요!';
+  for (const n of ['노랩!', '노랩! 노랩!', '노랩! 노랩! 노랩!']) assert.ok(seen.has(`${lazyLine}\n${n}`), `saw ${n}: ${JSON.stringify([...seen])}`);
+  assert.ok((await resultText()).includes('노랩 3번! 탈락!'));
+  console.log('PASS Chelsea: warn text with josa, first-bell wait, station banner, floor lock, no-rep x3 with pause, norep result');
+
+  // ---------------- 노랩 도중 기구 착지 → 취소, 떨어지는 중인 기구는 경고 안 함, 구간 미완료 탈락
+  await startWod('chelsea');
+  await game((s) => s.place('pullup', { x: 330, y: 700 }, 1));
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').emom.windowOpen);
+  await tapProd(5);
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').brain.state === 'EXHAUSTED');
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').emom.windowOpen);
+  await tapProd(5);
+  await page.waitForFunction(() => (window.__game.scene.getScene('Game').noRep?.count ?? 0) >= 1);
+  await game((s) => s.place('mat', { x: 360, y: 900 }, -1));
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').brain.state === 'WALKING');
+  assert.deepEqual(await game((s) => ({ noRep: s.noRep, alpha: s.chimpVignette.alpha })), { noRep: null, alpha: 0 });
+  const inFlight = await game((s) => { s.toast.text.setText(''); s.place('pullup', { x: 510, y: 694 }, 2); s.warnStation(2); return s.toast.text.text; });
+  assert.equal(inFlight, '', 'falling equipment counts as placed');
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').intervalDone);
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').emom.secToNextBell < 1);
+  await game((s) => { s.intervalDone = false; });
+  assert.ok((await resultText()).includes('시간 안에 못 끝냈어요!'));
+  console.log('PASS Chelsea: landing cancels no-rep, in-flight equipment suppresses warn, unfinished interval fails');
+
+  // ---------------- Fight Gone Bad HUD
+  await startWod('fgb');
+  const fgb = await game((s) => ({ chips: s.hud.chips.map((c) => c.text.text), hl: s.toolbar.items.filter((i) => i.highlight).map((i) => i.id), title: s.hud.title.text }));
+  assert.deepEqual(fgb.chips, ['0/3', '0/3', '0/3', '0/3', '0/3']);
+  assert.deepEqual(fgb.hl, ['wallball']);
+  await page.screenshot({ path: 'artifacts/emom-fgb.png' });
+  console.log(`PASS Fight Gone Bad: compact chips, first station highlight, title "${fgb.title}"`);
+
   assert.deepEqual(errors, []);
 } finally {
   await browser.close();

@@ -23,6 +23,7 @@ export class HUD {
   private muteText: Phaser.GameObjects.Text;
   private lastBurnout = -1;
   private lastSec = -1;
+  private compact = false;
 
   constructor(scene: Phaser.Scene, private readonly progress: WodProgress, cb: HudCallbacks) {
     const W = CONFIG.logicalWidth;
@@ -65,6 +66,7 @@ export class HUD {
     // 진행도 칩
     if (wod) {
       const n = wod.requirements.length;
+      this.compact = n > 3;
       const chipW = (W - 24) / n;
       wod.requirements.forEach((r, i) => {
         const cx = 12 + chipW * i + 8;
@@ -120,7 +122,7 @@ export class HUD {
       const eq = c.eq as keyof typeof EQUIPMENT;
       const req = this.progress.required(eq);
       const done = this.progress.done.get(eq) ?? 0;
-      c.text.setText(`${EQUIPMENT[eq].name}\n${done}/${req}`);
+      c.text.setText(this.compact ? `${done}/${req}` : `${EQUIPMENT[eq].name}\n${done}/${req}`);
       const full = done >= req;
       c.text.setColor(full ? '#3ddc84' : '#ffffff');
       c.check.setVisible(full);

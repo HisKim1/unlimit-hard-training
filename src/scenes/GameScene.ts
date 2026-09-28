@@ -89,6 +89,10 @@ export class GameScene extends Phaser.Scene {
   private bellPulse = false;
   /** 순환형 총 구간 수 (칼수형 null) */
   private emomTotal: number | null = null;
+  /** 순환형: 이번 구간의 세션을 마쳤는가 */
+  private intervalDone = false;
+  /** 순환형: 기구가 없어 게으름 피우는 중 노랩 카운트 */
+  private noRep: { count: number; timer?: Phaser.Time.TimerEvent } | null = null;
 
   constructor() {
     super('Game');
@@ -111,6 +115,8 @@ export class GameScene extends Phaser.Scene {
     this.bellBanner = null;
     this.bellPulse = false;
     this.emomTotal = null;
+    this.intervalDone = false;
+    this.noRep = null;
   }
 
   create(): void {
@@ -129,9 +135,12 @@ export class GameScene extends Phaser.Scene {
 
     this.brain = new Brain(
       {
-        candidates: () => this.equipment
-          .filter((e) => !e.removed && this.landed.has(e.id))
-          .map((e) => ({ id: e.id, usePoint: e.usePoint })),
+        candidates: () => {
+          const station = this.rotate ? this.emom!.station(this.emom!.interval) : undefined;
+          return this.equipment
+            .filter((e) => !e.removed && this.landed.has(e.id) && (station === undefined || e.type === station))
+            .map((e) => ({ id: e.id, usePoint: e.usePoint }));
+        },
         sessionDurationSec: (id) => {
           const eq = this.eqById(id);
           if (!eq) return 5;
@@ -145,6 +154,7 @@ export class GameScene extends Phaser.Scene {
     if (this.wod?.emom) {
       this.emom = new EmomClock(this.wod.emom);
       this.emomTotal = this.wod.emom.kind === 'rotate' ? this.wod.requirements.reduce((n, r) => n + r.sessions, 0) : null;
+      this.brain.floorProdLocked = this.wod.emom.kind === 'rotate';
     }
 
     this.hud = new HUD(this, this.progress, {
@@ -159,7 +169,7 @@ export class GameScene extends Phaser.Scene {
         : STR.dragHint),
         onTabChange: () => this.cancelDrag(),
     });
-    if (this.wod) this.toolbar.setHighlighted(this.wod.requirements.map((r) => r.equipment));
+    this.refreshHighlight();
     this.createProdButton();
     this.createCheerButton();
     if (this.emom) this.bellBanner = new BellBanner(this);
@@ -189,6 +199,10 @@ export class GameScene extends Phaser.Scene {
 
   private eqById(id: number): Equipment | undefined {
     return this.equipment.find((e) => e.id === id);
+  }
+
+  private get rotate(): boolean {
+    return !!this.emom && this.wod?.emom?.kind === 'rotate';
   }
 
   // ------------------------------------------------------------ 재촉 버튼
@@ -256,7 +270,7 @@ export class GameScene extends Phaser.Scene {
     if (this.ended || this.chimpRoll() >= chimpChance(this.brain.chimpPunished)) return;
     const lost = this.progress.forget();
     this.hud.refreshProgress();
-    this.toolbar.setHighlighted(this.wod?.requirements.filter(r => this.progress.remaining(r.equipment) > 0).map(r => r.equipment) ?? []);
+    this.refreshHighlight();
     const detail = lost.length ? `\n차감: ${lost.map(r => `${EQUIPMENT[r.equipment].name} −${r.count}`).join(' · ')}` : '';
     this.toast.show(STR.toastChimp + detail, CONFIG.CHIMP_TOAST_MS, '#ffffff', true, true);
     audio.play('warn');
@@ -276,6 +290,8 @@ export class GameScene extends Phaser.Scene {
         this.toast.show(e.text);
         break;
       case 'state':
+        if (e.from === 'IDLE_REELS' && e.to !== 'IDLE_REELS') this.cancelNoRep();
+        if (e.to === 'IDLE_REELS' && this.rotate && this.emom!.interval >= 0 && !this.intervalDone && !this.ended) this.startNoRep();
         if (e.to === 'WALKING') {
           const t = this.brain.targetId !== null ? this.eqById(this.brain.targetId) : undefined;
           this.view.lastTarget = t ? t.usePoint : null;
@@ -328,14 +344,25 @@ export class GameScene extends Phaser.Scene {
     const def = this.wod?.emom;
     if (!def) return;
     switch (ev.type) {
+      case 'warn':
+        if (def.kind === 'rotate') this.warnStation(ev.bell);
+        break;
       case 'bell':
+        if (def.kind === 'rotate' && ev.bell > 0 && !this.intervalDone) {
+          this.fail('emomUnfinished');
+          return;
+        }
+        this.intervalDone = false;
         audio.play('bell');
+        this.refreshHighlight();
         break;
       case 'answered':
         audio.play('ding');
         if (def.kind === 'interrupt' && def.interrupt) {
           this.view.interrupt = { anim: def.interrupt.anim, label: def.interrupt.label };
           this.brain.beginInterrupt(def.interrupt.durationSec);
+        } else {
+          this.brain.bellAnswered();
         }
         break;
       case 'missed':
@@ -344,6 +371,66 @@ export class GameScene extends Phaser.Scene {
       default:
         break;
     }
+  }
+
+  /** 툴바 강조: 순환형은 이번 구간(아직 안 했으면)과 다음 구간 기구, 그 외는 남은 요구 기구 */
+  private refreshHighlight(): void {
+    if (!this.wod) return;
+    if (this.rotate) {
+      const k = this.emom!.interval;
+      const ids = [k >= 0 && !this.intervalDone ? this.emom!.station(k) : null, this.emom!.station(k + 1)]
+        .filter((x): x is EquipmentId => x !== null);
+      this.toolbar.setHighlighted([...new Set(ids)]);
+      return;
+    }
+    this.toolbar.setHighlighted(this.wod.requirements.filter((r) => this.progress.remaining(r.equipment) > 0).map((r) => r.equipment));
+  }
+
+  /** 벨 3초 전: 다음 구간 기구가 착지한 것도, 떨어지는 중인 것도 없으면 게으름 경고 */
+  private warnStation(bell: number): void {
+    const type = this.emom?.station(bell);
+    if (!type || this.equipment.some((e) => !e.removed && e.type === type)) return;
+    this.toast.show(STR.emomLazy(EQUIPMENT[type].name), CONFIG.EMOM_WARN_BEFORE_SEC * 1000, '#ffc53d');
+    audio.play('warn');
+  }
+
+  /** 기구가 없어 게으름: 붉은 테두리 은은하게 NOREP_COUNT 번, 끝까지 안 놓으면 탈락 */
+  private startNoRep(): void {
+    if (this.noRep) return;
+    this.noRep = { count: 0 };
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const station = this.emom!.station(this.emom!.interval);
+    const lazy = station ? STR.emomLazy(EQUIPMENT[station].name) : '';
+    const pulse = () => {
+      if (!this.noRep || this.ended) return;
+      this.noRep.count++;
+      this.toast.show(`${lazy}\n${STR.noRep(this.noRep.count)}`, CONFIG.NOREP_PULSE_MS, '#ff5a5a');
+      audio.play('warn');
+      this.tweens.killTweensOf(this.chimpVignette);
+      this.chimpVignette.setAlpha(0);
+      this.tweens.add({
+        targets: this.chimpVignette, alpha: reduced ? 0.2 : 0.55,
+        duration: CONFIG.NOREP_PULSE_MS / 2, yoyo: true, ease: 'Sine.easeInOut',
+      });
+      this.noRep.timer = this.time.delayedCall(CONFIG.NOREP_PULSE_MS, () => {
+        if (!this.noRep) return;
+        if (this.noRep.count >= CONFIG.NOREP_COUNT) {
+          this.noRep = null;
+          this.fail('norep');
+        } else {
+          pulse();
+        }
+      });
+    };
+    pulse();
+  }
+
+  private cancelNoRep(): void {
+    if (!this.noRep) return;
+    this.noRep.timer?.remove();
+    this.noRep = null;
+    this.tweens.killTweensOf(this.chimpVignette);
+    this.chimpVignette.setAlpha(0);
   }
 
   /** 벨 창 동안 배너·재촉 버튼 맥동. 창이 닫히면 원래대로. */
@@ -424,13 +511,17 @@ export class GameScene extends Phaser.Scene {
     if (counted) {
       audio.play('ding');
       this.hud.refreshProgress();
-      this.toolbar.setHighlighted(this.wod!.requirements.filter(r => this.progress.remaining(r.equipment) > 0).map(r => r.equipment));
+      this.refreshHighlight();
     }
     if (eq.uses >= CONFIG.SESSIONS_PER_EQUIPMENT) {
       eq.remove(this.fx);
       audio.play('poof');
       this.equipment = this.equipment.filter((e) => e !== eq);
       this.landed.delete(eq.id);
+    }
+    if (this.rotate && eq.type === this.emom!.station(this.emom!.interval)) {
+      this.intervalDone = true;
+      this.refreshHighlight();
     }
     if (this.progress.complete) this.clear();
   }
@@ -642,6 +733,7 @@ export class GameScene extends Phaser.Scene {
     this.ended = true;
     this.emom?.stop();
     this.bellBanner?.hide();
+    this.cancelNoRep();
     this.toolbar.enabled = false;
     this.cancelDrag();
     this.brain.celebrate();
@@ -667,6 +759,7 @@ export class GameScene extends Phaser.Scene {
     this.ended = true;
     this.emom?.stop();
     this.bellBanner?.hide();
+    this.cancelNoRep();
     this.failReason = reason;
     this.toolbar.enabled = false;
     this.cancelDrag();

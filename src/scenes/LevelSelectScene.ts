@@ -45,8 +45,17 @@ export class LevelSelectScene extends Phaser.Scene {
       const lv = this.add.text(-(W - 60) / 2 + 24, -46, `Lv${w.level}`, { fontFamily: FONT, fontSize: '28px', color: unlocked ? '#8fb4ff' : '#666' }).setOrigin(0, 0.5);
       const name = this.add.text(-(W - 60) / 2 + 100, -46, '', { fontFamily: FONT, fontSize: '32px', color: unlocked ? '#ffffff' : '#666' }).setOrigin(0, 0.5);
       fitText(name, [`${w.name} · ${w.nameKo}`, ...(w.shortName ? [`${w.shortName} · ${w.nameKo}`] : [])], (W - 60) - 100 - 70, 32, 24);
-      const desc = this.add.text(-(W - 60) / 2 + 24, 2, w.original, {
-        fontFamily: FONT, fontSize: '21px', color: unlocked ? '#c9d4e0' : '#555', wordWrap: { width: W - 250, useAdvancedWrap: true }, lineSpacing: 2,
+      const n = w.requirements.length;
+      const many = n > 3;
+      const iconSize = many ? 36 : 48;
+      const iconStep = many ? 40 : 58;
+      const iconY = many ? 20 : 30;
+      const iconX0 = (W - 60) / 2 - 40;
+      const iconsLeft = iconX0 - (n - 1) * iconStep - iconSize / 2;
+      const descX = -(W - 60) / 2 + 24;
+      const desc = this.add.text(descX, 2, w.emom ? `🔔 EMOM · ${w.original}` : w.original, {
+        fontFamily: FONT, fontSize: '21px', color: unlocked ? '#c9d4e0' : '#555',
+        wordWrap: { width: Math.min(W - 250, iconsLeft - 12 - descX), useAdvancedWrap: true }, lineSpacing: 2,
       }).setOrigin(0, 0.5);
       const info = this.add.text(-(W - 60) / 2 + 24, 52,
         `${STR.timeCap(formatTime(w.timeCapSec))}   ${best !== undefined ? STR.best(formatRecord(best)) : STR.noRecord}`,
@@ -55,8 +64,8 @@ export class LevelSelectScene extends Phaser.Scene {
       // 필요한 기구 아이콘
       w.requirements.forEach((r, k) => {
         const ref = imageRef(this, EQUIPMENT[r.equipment].icon);
-        const icon = this.add.image((W - 60) / 2 - 40 - k * 58, 30, ref.key, ref.frame);
-        icon.setScale(48 / Math.max(icon.width, icon.height)).setAlpha(unlocked ? 1 : 0.25);
+        const icon = this.add.image(iconX0 - k * iconStep, iconY, ref.key, ref.frame);
+        icon.setScale(iconSize / Math.max(icon.width, icon.height)).setAlpha(unlocked ? 1 : 0.25);
         parts.push(icon);
       });
       if (!unlocked) {

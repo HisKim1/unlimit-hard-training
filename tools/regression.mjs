@@ -64,9 +64,14 @@ try {
       return { requirements: s.wod.requirements.map(r => r.equipment), highlighted: s.toolbar.items.filter(i => i.highlight).map(i => i.id),
         chips: s.hud.chips.map(c => ({ text: c.text.text, left: c.text.getBounds().left, right: c.text.getBounds().right, bottom: c.text.getBounds().bottom })) };
     });
-    assert.deepEqual([...guide.highlighted].sort(), [...guide.requirements].sort());
+    const rotate = await page.evaluate(() => window.__game.scene.getScene('Game').wod.emom?.kind === 'rotate');
+    if (rotate) {
+      assert.ok(guide.highlighted.length >= 1 && guide.highlighted.every((h) => guide.requirements.includes(h)), `level ${level}: rotate highlight`);
+    } else {
+      assert.deepEqual([...guide.highlighted].sort(), [...guide.requirements].sort());
+    }
     guide.chips.forEach((c, i) => {
-      assert.match(c.text, /\S+\n0\/\d+/);
+      assert.match(c.text, /^(\S[^\n]*\n)?0\/\d+$/);
       assert.ok(c.bottom <= 114 && c.left >= 0 && c.right <= 720, `level ${level}: ${JSON.stringify(c)}`);
       if (i) assert.ok(guide.chips[i - 1].right < c.left, 'requirement labels do not overlap');
     });
@@ -105,7 +110,11 @@ try {
     });
   });
   assert.equal(cards.length, wodCount);
-  for (const k of cards) assert.ok(k.name.r <= k.card.r - 60, `card title fits: ${k.text}`);
+  const hit = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+  for (const k of cards) {
+    assert.ok(k.name.r <= k.card.r - 60, `card title fits: ${k.text}`);
+    for (const i of k.icons) assert.ok(!hit(i, k.desc) && !hit(i, k.info) && !hit(i, k.name), `card icons clear of text: ${k.text}`);
+  }
   await page.screenshot({ path: 'artifacts/level-select.png' });
   console.log('PASS all WOD names/counts fit, needed-only highlights, completed highlight clears');
   await start();
