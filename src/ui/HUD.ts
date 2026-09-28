@@ -15,6 +15,7 @@ export interface HudCallbacks {
 
 export class HUD {
   readonly title: Phaser.GameObjects.Text;
+  readonly bellText: Phaser.GameObjects.Text | null = null;
   private timer: Phaser.GameObjects.Text;
   private chips: { eq: string; text: Phaser.GameObjects.Text; icon: Phaser.GameObjects.Image; check: Phaser.GameObjects.Text }[] = [];
   private gauge: Phaser.GameObjects.Graphics;
@@ -48,7 +49,11 @@ export class HUD {
     const wod = progress.wod;
     this.title = scene.add.text(76, 36, '', { fontFamily: FONT, fontSize: '30px', color: '#ffffff' })
       .setOrigin(0, 0.5).setDepth(DEPTH.hud);
-    const titleRight = W - 190; // 타이머(최대 "6:40") 왼쪽
+    if (wod?.emom) {
+      this.bellText = scene.add.text(W - 196, 36, '', { fontFamily: FONT, fontSize: '26px', color: '#ffffff' })
+        .setOrigin(1, 0.5).setDepth(DEPTH.hud);
+    }
+    const titleRight = wod?.emom ? W - 196 - 170 : W - 190; // 벨 카운트다운(최대 "🔔15 · 15/15") 또는 타이머 왼쪽
     if (wod) {
       fitText(this.title, [`Lv${wod.level} ${wod.name}`, ...(wod.shortName ? [`Lv${wod.level} ${wod.shortName}`] : [])], titleRight - 76, 30, 24);
     } else {
@@ -100,6 +105,14 @@ export class HUD {
     this.lastSec = s;
     this.timer.setText(formatTime(s));
     this.timer.setColor(s <= 10 ? '#ff5a5a' : s <= 30 ? '#ffc53d' : '#ffffff');
+  }
+
+  /** EMOM: 다음 벨까지 남은 초와 구간 번호(순환형). 벨 직전 경고 구간은 빨간색. */
+  setBell(secToNext: number, interval: number, total: number | null): void {
+    if (!this.bellText) return;
+    const s = Math.ceil(secToNext - 1e-6);
+    const suffix = total ? ` · ${Math.min(total, Math.max(0, interval + 1))}/${total}` : '';
+    this.bellText.setText(STR.emomHudBell(s, suffix)).setColor(secToNext <= CONFIG.EMOM_WARN_BEFORE_SEC ? '#ff5a5a' : '#ffffff');
   }
 
   refreshProgress(): void {

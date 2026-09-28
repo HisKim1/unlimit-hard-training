@@ -219,6 +219,22 @@ class AudioSystem {
       });
     });
 
+    this.register('bell', (ctx, out, t) => {
+      [1568, 2093, 1568].forEach((f, i) => {
+        const o = ctx.createOscillator();
+        o.type = 'triangle';
+        o.frequency.value = f;
+        const g = ctx.createGain();
+        const st = t + i * 0.12;
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.28, st + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.001, st + 0.5);
+        o.connect(g).connect(out);
+        o.start(st);
+        o.stop(st + 0.55);
+      });
+    });
+
     this.register('fanfare', (ctx, out, t) => {
       const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5];
       const times = [0, 0.12, 0.24, 0.36, 0.52, 0.62];

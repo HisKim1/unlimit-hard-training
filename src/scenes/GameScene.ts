@@ -16,6 +16,8 @@ import { WonjangView } from '../entities/Wonjang';
 import { DEPTH, Effects } from '../fx/Effects';
 import { Toast } from '../ui/Toast';
 import { HUD } from '../ui/HUD';
+import { EmomClock, type EmomEvent } from '../systems/Emom';
+import { BellBanner } from '../ui/BellBanner';
 import { Toolbar } from '../ui/Toolbar';
 import { imageOrigin, imageRef } from '../assets';
 import { BUFFS, isBuff, type BuffId, type ToolbarId } from '../buffs';
@@ -82,6 +84,11 @@ export class GameScene extends Phaser.Scene {
   private timeWarned = false;
   private prodPressedMs = 0;
   failReason: FailReason | null = null;
+  private emom: EmomClock | null = null;
+  private bellBanner: BellBanner | null = null;
+  private bellPulse = false;
+  /** 순환형 총 구간 수 (칼수형 null) */
+  private emomTotal: number | null = null;
 
   constructor() {
     super('Game');
@@ -100,6 +107,10 @@ export class GameScene extends Phaser.Scene {
     this.coachVisits = { bong: 0, heo: 0, jong: 0 };
     this.timeWarned = false;
     this.failReason = null;
+    this.emom = null;
+    this.bellBanner = null;
+    this.bellPulse = false;
+    this.emomTotal = null;
   }
 
   create(): void {
@@ -131,6 +142,10 @@ export class GameScene extends Phaser.Scene {
     );
     this.view = new WonjangView(this, this.brain, this.fx);
     this.brain.on((e) => this.onBrainEvent(e));
+    if (this.wod?.emom) {
+      this.emom = new EmomClock(this.wod.emom);
+      this.emomTotal = this.wod.emom.kind === 'rotate' ? this.wod.requirements.reduce((n, r) => n + r.sessions, 0) : null;
+    }
 
     this.hud = new HUD(this, this.progress, {
       onPause: () => this.setPaused(true),
@@ -147,6 +162,7 @@ export class GameScene extends Phaser.Scene {
     if (this.wod) this.toolbar.setHighlighted(this.wod.requirements.map((r) => r.equipment));
     this.createProdButton();
     this.createCheerButton();
+    if (this.emom) this.bellBanner = new BellBanner(this);
 
     this.input.on(Phaser.Input.Events.POINTER_MOVE, this.onDragMove, this);
     this.input.on(Phaser.Input.Events.POINTER_UP, this.onDragEnd, this);
@@ -205,6 +221,13 @@ export class GameScene extends Phaser.Scene {
 
   private onProd(): void {
     if (this.paused || this.ended) return;
+    if (this.emom?.windowOpen) {
+      // 벨 창: 재촉은 벨 카운트로만 쓴다 (번아웃·속도·침팬지 없음)
+      if (!this.brain.bellProd()) return;
+      this.emom.prod();
+      this.prodFeedback();
+      return;
+    }
     if (!this.brain.prod()) {
       // 쿨타임 중: 입력 무시, 버튼은 눌린 채
       return;
@@ -297,6 +320,49 @@ export class GameScene extends Phaser.Scene {
       default:
         break;
     }
+  }
+
+  // ------------------------------------------------------------ EMOM
+
+  private onEmomEvent(ev: EmomEvent): void {
+    const def = this.wod?.emom;
+    if (!def) return;
+    switch (ev.type) {
+      case 'bell':
+        audio.play('bell');
+        break;
+      case 'answered':
+        audio.play('ding');
+        if (def.kind === 'interrupt' && def.interrupt) {
+          this.view.interrupt = { anim: def.interrupt.anim, label: def.interrupt.label };
+          this.brain.beginInterrupt(def.interrupt.durationSec);
+        }
+        break;
+      case 'missed':
+        this.fail('emomMissed');
+        break;
+      default:
+        break;
+    }
+  }
+
+  /** 벨 창 동안 배너·재촉 버튼 맥동. 창이 닫히면 원래대로. */
+  private updateBellBanner(): void {
+    if (!this.bellBanner || !this.emom) return;
+    if (this.ended || !this.emom.windowOpen) {
+      this.bellBanner.hide();
+      if (this.bellPulse) {
+        this.bellPulse = false;
+        this.prodBtn.setScale(this.prodPressedMs > 0 ? 0.94 : 1);
+      }
+      return;
+    }
+    const need = CONFIG.EMOM_PRODS_REQUIRED;
+    const st = this.wod?.emom?.kind === 'rotate' ? this.emom.station(this.emom.interval) : null;
+    const label = st ? STR.emomBellStation(EQUIPMENT[st].name, this.emom.prodCount, need) : STR.emomBellBurpee(this.emom.prodCount, need);
+    this.bellBanner.update(label, this.emom.windowRemainingSec / CONFIG.EMOM_WINDOW_SEC);
+    this.bellPulse = true;
+    this.prodBtn.setScale((this.prodPressedMs > 0 ? 0.94 : 1) * (1 + 0.07 * Math.abs(Math.sin(this.time.now / 90))));
   }
 
   private pickFloorPose(tier: PoseTier, avoid?: string): string {
@@ -572,6 +638,8 @@ export class GameScene extends Phaser.Scene {
   private clear(): void {
     if (this.ended) return;
     this.ended = true;
+    this.emom?.stop();
+    this.bellBanner?.hide();
     this.toolbar.enabled = false;
     this.cancelDrag();
     this.brain.celebrate();
@@ -595,6 +663,8 @@ export class GameScene extends Phaser.Scene {
   private fail(reason: FailReason): void {
     if (this.ended) return;
     this.ended = true;
+    this.emom?.stop();
+    this.bellBanner?.hide();
     this.failReason = reason;
     this.toolbar.enabled = false;
     this.cancelDrag();
@@ -699,6 +769,14 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (!this.ended) this.brain.update(dt);
+    if (!this.ended && this.emom) {
+      for (const ev of this.emom.update(dt)) {
+        this.onEmomEvent(ev);
+        if (this.ended) break;
+      }
+      this.hud.setBell(this.emom.secToNextBell, this.emom.interval, this.emomTotal);
+    }
+    this.updateBellBanner();
     const cheerCooldown = this.brain.cheerCooldown;
     this.cheerLabel.setText(cheerCooldown > 0 ? `${Math.ceil(cheerCooldown)}초` : STR.cheerButton);
     this.cheerBtn.setAlpha(this.ended || cheerCooldown > 0 ? 0.55 : 1);

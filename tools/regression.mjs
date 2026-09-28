@@ -72,7 +72,8 @@ try {
     });
     const fit = await page.evaluate(() => {
       const s = window.__game.scene.getScene('Game');
-      return { title: s.hud.title.getBounds().right, timer: s.hud.timer.getBounds().left, text: s.hud.title.text };
+      const limit = s.hud.bellText ? s.hud.bellText.getBounds().left : s.hud.timer.getBounds().left;
+      return { title: s.hud.title.getBounds().right, timer: limit, text: s.hud.title.text };
     });
     assert.ok(fit.title <= fit.timer - 6, `level ${level}: HUD title "${fit.text}" overlaps timer`);
     if (guide.requirements.length === 3 && !shotThree) {

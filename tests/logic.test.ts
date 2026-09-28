@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../src/config';
 import { evaluatePlacement, pointInPolygon, type PlacedInfo } from '../src/systems/Placement';
@@ -161,5 +162,22 @@ describe('응원 풀 (스펙 11장)', () => {
   it('다른 WOD·자유 모드는 기본 풀', () => {
     expect(cheerPool(WODS[0])).toEqual({ names: STR.cheerNames, lines: STR.cheerLines });
     expect(cheerPool(null)).toEqual({ names: STR.cheerNames, lines: STR.cheerLines });
+  });
+});
+
+describe('EMOM WOD 데이터 (스펙 1장)', () => {
+  it('칼수: 10초마다 버피 5개, 바벨 스러스터 20개 × 5, Lv9', () => {
+    const kalsu = WODS.find((w) => w.id === 'kalsu')!;
+    // Lv9 은 Task 11 이 Chelsea 를 jackie 앞(Lv5)에 끼워넣은 뒤의 최종 순서다.
+    // Task 10 시점(칼수만 추가)에는 annie 다음이라 Lv8 이다 — task-11-brief.md 의
+    // 순서 테스트(['fran','karen','devil1000','diane','chelsea','jackie','tommyv','annie','kalsu',…])가 이를 확인해준다.
+    expect(kalsu.level).toBe(8);
+    expect(kalsu.emom).toEqual({ kind: 'interrupt', intervalSec: 10, interrupt: { anim: 'wj_burpee', label: '버피 5개', durationSec: 3 } });
+    expect(kalsu.requirements).toEqual([{ equipment: 'barbell', sessions: 5, labels: Array.from({ length: 5 }, () => '스러스터 20개') }]);
+  });
+
+  it('인터럽트 모션이 빌드된 애니 목록에 있다', () => {
+    const anims = JSON.parse(readFileSync('public/assets/anims.json', 'utf8')).anims;
+    for (const w of WODS) if (w.emom?.interrupt) expect(anims[w.emom.interrupt.anim]).toBeDefined();
   });
 });

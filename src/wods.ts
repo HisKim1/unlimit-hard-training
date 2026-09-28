@@ -3,6 +3,7 @@
 import type { EquipmentId } from './equipment';
 import { MOTION_PRESETS, type MotionPreset } from './equipment';
 import { STR } from './strings';
+import type { EmomDef } from './systems/Emom';
 
 export interface WodRequirement {
   equipment: EquipmentId;
@@ -31,6 +32,8 @@ export interface WodDef {
   fatigue?: { equipment: EquipmentId; endSpeed: number };
   /** 응원 버튼 이름·대사 덮어쓰기 (대사는 기본 대사와 섞는다) */
   cheer?: { names: readonly string[]; lines: readonly string[] };
+  /** EMOM: 벨마다 3초 안에 재촉 5번 (스펙 5~7장) */
+  emom?: EmomDef;
 }
 
 type WodSpec = Omit<WodDef, 'level'>;
@@ -90,6 +93,13 @@ const WOD_LIST: WodSpec[] = [
     requirements: [
       { equipment: 'jumprope', sessions: 5, labels: ['더블언더 50개', '더블언더 40개', '더블언더 30개', '더블언더 20개', '더블언더 10개'] },
       { equipment: 'mat', sessions: 5, labels: ['싯업 50개', '싯업 40개', '싯업 30개', '싯업 20개', '싯업 10개'] },
+    ],
+  },
+  {
+    id: 'kalsu', name: 'Kalsu', nameKo: '칼수', original: '스러스터 100개, 매분 시작마다 버피 5개', timeCapSec: 300, bonus: true,
+    emom: { kind: 'interrupt', intervalSec: 10, interrupt: { anim: 'wj_burpee', label: '버피 5개', durationSec: 3 } },
+    requirements: [
+      { equipment: 'barbell', sessions: 5, labels: rep('스러스터 20개', 5) },
     ],
   },
   {
