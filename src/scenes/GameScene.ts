@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import { COLORS, CONFIG, DEBUG, FONT, TIME_SCALE, depthScale, spriteScale, type Point } from '../config';
 import { EQUIPMENT, FREE_MODE_EXTRA_MOTIONS, type EquipmentId, type MotionPreset } from '../equipment';
 import { cheerPool, wodByLevel, type WodDef } from '../wods';
-import { STR, pick } from '../strings';
+import { STR, failText, pick, type FailReason } from '../strings';
 import { Brain, type BrainEvent, type PoseTier } from '../systems/Brain';
 import { chimpChance } from '../systems/Chimp';
 import { WodProgress } from '../systems/WodProgress';
@@ -28,7 +28,7 @@ export interface GameData {
 export interface ResultData {
   level: number | null;
   cleared: boolean;
-  reason?: 'timeout' | 'fainted';
+  reason?: FailReason;
   timeSec: number;
   isBest: boolean;
   best?: number;
@@ -81,6 +81,7 @@ export class GameScene extends Phaser.Scene {
   private coachVisits = { bong: 0, heo: 0, jong: 0 };
   private timeWarned = false;
   private prodPressedMs = 0;
+  failReason: FailReason | null = null;
 
   constructor() {
     super('Game');
@@ -98,6 +99,7 @@ export class GameScene extends Phaser.Scene {
     this.coaches = [];
     this.coachVisits = { bong: 0, heo: 0, jong: 0 };
     this.timeWarned = false;
+    this.failReason = null;
   }
 
   create(): void {
@@ -590,16 +592,17 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private fail(reason: 'timeout' | 'fainted'): void {
+  private fail(reason: FailReason): void {
     if (this.ended) return;
     this.ended = true;
+    this.failReason = reason;
     this.toolbar.enabled = false;
     this.cancelDrag();
     audio.setMusic(null);
     audio.play('fail');
     this.tweens.killTweensOf(this.chimpVignette);
     this.chimpVignette.setAlpha(0);
-    this.toast.show(reason === 'timeout' ? STR.failTimeout : STR.toastFainted, CONFIG.FAINT_TO_RESULT_MS, '#ff5a5a', true);
+    this.toast.show(reason === 'fainted' ? STR.toastFainted : failText(reason), CONFIG.FAINT_TO_RESULT_MS, '#ff5a5a', true);
     const data: ResultData = {
       level: this.wod?.level ?? null, cleared: false, reason, timeSec: this.elapsed, isBest: false,
       best: this.wod ? save.best(this.wod.id) : undefined,

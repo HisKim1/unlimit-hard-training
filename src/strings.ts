@@ -1,4 +1,5 @@
 // 사용자에게 보이는 모든 한국어 문구.
+import { CONFIG } from './config';
 
 export const STR = {
   title: '원장님 키우기',
@@ -63,6 +64,16 @@ export const STR = {
   toastFloorHigh: ['원장님이 일어나려 합니다! 좀 더 재촉해볼까요?'],
   toastGotUp: '원장님이 일어났습니다!',
   toastWaitBell: '원장님이 벨을 기다리며 쉬는 중입니다.',
+
+  // ---- EMOM ----
+  emomLazy: (name: string) => `${josa(name, '이/가')} 없어서 원장님이 게으름 피웁니다! 다음 기구를 배치해주세요!`,
+  emomBellBurpee: (n: number, need: number) => `🔔 버피! ${n}/${need}`,
+  emomBellStation: (name: string, n: number, need: number) => `🔔 ${name}! ${n}/${need}`,
+  emomHudBell: (sec: number, suffix: string) => `🔔${sec}${suffix}`,
+  noRep: (n: number) => Array.from({ length: n }, () => '노랩!').join(' '),
+  failEmomMissed: (sec: number, n: number) => `벨을 놓쳤어요! ${sec}초 안에 ${n}번 재촉해야 해요.`,
+  failEmomUnfinished: '시간 안에 못 끝냈어요!',
+  failNorep: (n: number) => `노랩 ${n}번! 탈락!`,
   toastChimp: 'WARNING! 전방에 침팬지 출현!\n원장님이 개수를 까먹었습니다!',
   toastLazy: 'WARNING! 원장님이 너무 나태합니다!\n빨리 재촉 안 하면 침팬지가 등장할수도?!',
   toastChimpPunished: (pct: number) => `침팬지 등장 확률이 ${pct}%로 올랐습니다!`,
@@ -110,4 +121,25 @@ export function formatRecord(sec: number): string {
   const m = Math.floor(sec / 60);
   const r = sec - m * 60;
   return `${m}:${r.toFixed(1).padStart(4, '0')}`;
+}
+
+export type FailReason = 'timeout' | 'fainted' | 'emomMissed' | 'emomUnfinished' | 'norep';
+
+/** 결과 화면 탈락 사유 */
+export function failText(reason: FailReason): string {
+  switch (reason) {
+    case 'fainted': return STR.failFainted;
+    case 'emomMissed': return STR.failEmomMissed(CONFIG.EMOM_WINDOW_SEC, CONFIG.EMOM_PRODS_REQUIRED);
+    case 'emomUnfinished': return STR.failEmomUnfinished;
+    case 'norep': return STR.failNorep(CONFIG.NOREP_COUNT);
+    default: return STR.failTimeout;
+  }
+}
+
+/** 마지막 글자 받침 유무로 조사를 붙인다 (한글이 아니면 받침 없음으로 본다) */
+export function josa(word: string, pair: '이/가' | '을/를' | '은/는' | '과/와'): string {
+  const [withFinal, without] = pair.split('/');
+  const code = word.charCodeAt(word.length - 1);
+  const hasFinal = code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
+  return word + (hasFinal ? withFinal : without);
 }

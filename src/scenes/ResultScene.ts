@@ -1,7 +1,7 @@
 // 결과 화면: 클리어(기록, 최고 기록 갱신, 멀쩡한 원장님) / 실패(사유 + 연출)
 import Phaser from 'phaser';
 import { CONFIG, FONT } from '../config';
-import { STR, formatRecord } from '../strings';
+import { STR, failText, formatRecord } from '../strings';
 import { WODS, wodByLevel } from '../wods';
 import { save } from '../systems/Save';
 import { audio } from '../systems/Audio';
@@ -72,8 +72,9 @@ export class ResultScene extends Phaser.Scene {
         this.add.text(W / 2, y, STR.prevBest(formatRecord(data.best)), { fontFamily: FONT, fontSize: '32px', color: '#c9d4e0' }).setOrigin(0.5);
       }
     } else {
-      const reason = data.reason === 'fainted' ? STR.failFainted : STR.failTimeout;
-      this.add.text(W / 2, y, reason, { fontFamily: FONT, fontSize: '46px', color: '#ffffff' }).setOrigin(0.5);
+      this.add.text(W / 2, y, failText(data.reason ?? 'timeout'), {
+        fontFamily: FONT, fontSize: '46px', color: '#ffffff', align: 'center', wordWrap: { width: W - 80, useAdvancedWrap: true },
+      }).setOrigin(0.5);
     }
 
     // 버튼
