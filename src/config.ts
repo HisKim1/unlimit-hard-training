@@ -71,6 +71,14 @@ export const CONFIG = {
   COACH_WALK_SPEED: 160,
   BONG_ROAM_SPEED: 90,
 
+  // ---- EMOM (스펙 3·5장) ----
+  EMOM_PREP_SEC: 5, // 시작 ~ 첫 벨
+  EMOM_WINDOW_SEC: 3, // 벨 후 재촉 창
+  EMOM_PRODS_REQUIRED: 5,
+  EMOM_WARN_BEFORE_SEC: 3, // 벨 전 경고 시점
+  NOREP_COUNT: 3,
+  NOREP_PULSE_MS: 900, // 붉은 테두리 한 번 (450ms 켜짐 + 450ms 꺼짐)
+
   // ---- 상태 연출 시간 ----
   FLOOR_POSE_SWAP_SEC: [4, 6] as [number, number],
   GETTING_UP_MS: 600,
