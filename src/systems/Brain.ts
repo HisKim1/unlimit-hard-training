@@ -13,7 +13,8 @@ export type WState =
   | 'GETTING_UP'
   | 'GAVE_UP'
   | 'FAINTED'
-  | 'CELEBRATING';
+  | 'CELEBRATING'
+  | 'BURPEE'; // EMOM 칼수형: 벨마다 제자리 버피
 
 /** 재촉 진행에 따른 바닥 포즈 단계 */
 export type PoseTier = 'base' | 'mid' | 'high';
@@ -24,6 +25,7 @@ export type BrainEvent =
   | { type: 'startExercise'; equipmentId: number }
   | { type: 'sessionComplete'; equipmentId: number }
   | { type: 'sessionAborted'; equipmentId: number }
+  | { type: 'exercisePaused'; equipmentId: number } // 버피로 운동을 잠시 멈춤 (진행도 유지)
   | { type: 'poseChange'; tier: PoseTier } // 바닥 포즈 단계가 바뀜 (또는 새로 뻗음)
   | { type: 'poseSwap' } // 기구 없이 누워 있을 때 4~6초마다 다른 포즈
   | { type: 'prod'; kind: 'reels' | 'floor' | 'active' | 'none' }
@@ -70,6 +72,11 @@ export class Brain {
   private lazyWarned = false;
   private graceUntilMs = -1;
   private graceProds = 0;
+  /** 순환형 EMOM: 세션을 마치면 벨까지 바닥에서 쉰다 (바닥 재촉·허코 잠금) */
+  floorProdLocked = false;
+  private interruptMs = 0;
+  private interruptTotalMs = 0;
+  private resume: { state: WState; targetId: number | null; progress: number } | null = null;
 
   constructor(
     private readonly world: BrainWorld,
@@ -203,7 +210,12 @@ export class Brain {
         this.emit({ type: 'toast', text: STR.toastReels });
         break;
       case 'EXHAUSTED':
-        this.floorProd();
+        if (this.floorProdLocked) {
+          this.emit({ type: 'prod', kind: 'none' });
+          this.emit({ type: 'toast', text: STR.toastWaitBell });
+        } else {
+          this.floorProd();
+        }
         break;
       case 'WALKING':
       case 'EXERCISING':
@@ -218,6 +230,52 @@ export class Brain {
   /** 나태 경고 유예 중이면 받아들여진 재촉을 센다 */
   private countGraceProd(): void {
     if (this.graceUntilMs >= 0) this.graceProds++;
+  }
+
+  /** EMOM 벨 재촉: 쿨타임만 지키고 번아웃·속도·상태는 건드리지 않는다 */
+  bellProd(): boolean {
+    if (this.prodCoolingDown) return false;
+    this.lastProdMs = this.clockMs;
+    this.countGraceProd();
+    return true;
+  }
+
+  /** 버피 진행률 0~1 (라벨 게이지용) */
+  get interruptProgress(): number {
+    return this.interruptTotalMs > 0 ? 1 - Math.max(0, this.interruptMs) / this.interruptTotalMs : 0;
+  }
+
+  /** 칼수형 EMOM: 하던 것을 멈추고 제자리 버피. 끝나면 하던 것으로 돌아간다. */
+  beginInterrupt(durationSec: number): boolean {
+    if (this.state === 'FAINTED' || this.state === 'CELEBRATING' || this.state === 'BURPEE') return false;
+    this.resume = { state: this.state, targetId: this.targetId, progress: this.sessionProgress };
+    if (this.state === 'EXERCISING' && this.targetId !== null) this.emit({ type: 'exercisePaused', equipmentId: this.targetId });
+    this.interruptMs = this.interruptTotalMs = durationSec * 1000;
+    this.setState('BURPEE');
+    return true;
+  }
+
+  private endInterrupt(): void {
+    const r = this.resume;
+    this.resume = null;
+    const alive = r !== null && r.targetId !== null && this.world.candidates().some((e) => e.id === r.targetId);
+    if (r && alive && r.state === 'EXERCISING') {
+      this.targetId = r.targetId;
+      this.sessionProgress = r.progress;
+      this.setState('EXERCISING');
+      this.emit({ type: 'startExercise', equipmentId: r.targetId! });
+    } else if (r && alive && r.state === 'WALKING') {
+      this.targetId = r.targetId;
+      this.setState('WALKING');
+    } else {
+      this.goNext();
+    }
+  }
+
+  /** 순환형 EMOM: 벨 성공 → 쉬던 원장님을 이번 구간 기구로 보낸다 */
+  bellAnswered(): void {
+    if (this.state === 'EXHAUSTED') this.setState('GETTING_UP');
+    else if (this.state === 'IDLE_REELS' || this.state === 'GAVE_UP') this.goNext();
   }
 
   private floorProd(notify = true): void {
@@ -393,13 +451,14 @@ export class Brain {
         break;
       }
       case 'EXHAUSTED': {
-        if (!this.lazyWarned && this.clockMs - Math.max(this.lastProdMs, this.exhaustedAtMs) >= c.LAZY_WARN_SEC * 1000 - 1e-6) {
+        if (!this.lazyWarned && !this.floorProdLocked && this.clockMs - Math.max(this.lastProdMs, this.exhaustedAtMs) >= c.LAZY_WARN_SEC * 1000 - 1e-6) {
           this.lazyWarned = true;
           this.graceUntilMs = this.clockMs + c.LAZY_GRACE_SEC * 1000;
           this.graceProds = 0;
           this.emit({ type: 'lazyWarning' });
         }
-        this.heoProdSec += heoSec;
+        if (this.floorProdLocked) this.heoProdSec = 0;
+        else this.heoProdSec += heoSec;
         while (this.heoProdSec + 1e-9 >= c.HEO_PROD_INTERVAL_SEC && this.state === 'EXHAUSTED') {
           this.heoProdSec -= c.HEO_PROD_INTERVAL_SEC;
           this.floorProd(false);
@@ -418,6 +477,10 @@ export class Brain {
         break;
       case 'GAVE_UP':
         if (this.stateTimerMs >= c.GAVE_UP_MS) this.enterExhausted();
+        break;
+      case 'BURPEE':
+        this.interruptMs -= dtMs;
+        if (this.interruptMs <= 0) this.endInterrupt();
         break;
       default:
         break;

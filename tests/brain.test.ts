@@ -3,6 +3,7 @@ import { CONFIG } from '../src/config';
 import { Brain, type BrainEvent } from '../src/systems/Brain';
 import type { Candidate } from '../src/systems/Targeting';
 import { chimpChance } from '../src/systems/Chimp';
+import { STR } from '../src/strings';
 
 function setup(opts: { rnd?: () => number; equipment?: Candidate[] } = {}) {
   const eq: Candidate[] = opts.equipment ?? [];
@@ -377,5 +378,135 @@ describe('나태 경고 · 침팬지 (스펙 12장)', () => {
     }
     until(brain, () => brain.state !== 'EXHAUSTED' && brain.state !== 'GETTING_UP');
     expect(brain.chimpPunished).toBe(true);
+  });
+});
+
+describe('EMOM Brain (스펙 6장)', () => {
+  it('벨 재촉은 번아웃·속도·상태를 바꾸지 않고 쿨타임을 지킨다', () => {
+    const { brain, eq } = setup();
+    eq.push({ id: 1, usePoint: { x: 10, y: 0 } });
+    brain.onEquipmentPlaced();
+    until(brain, () => brain.state === 'EXERCISING');
+    expect(brain.bellProd()).toBe(true);
+    expect(brain.bellProd()).toBe(false);
+    brain.update(0.11);
+    expect(brain.bellProd()).toBe(true);
+    expect({ burnout: brain.burnout, speed: brain.speedMult, state: brain.state }).toEqual({ burnout: 0, speed: 1, state: 'EXERCISING' });
+  });
+
+  it('운동 중 버피 → 같은 세션 진행도로 복귀', () => {
+    const { brain, eq, events } = setup();
+    eq.push({ id: 1, usePoint: { x: 10, y: 0 } });
+    brain.onEquipmentPlaced();
+    until(brain, () => brain.state === 'EXERCISING');
+    run(brain, 0.5);
+    const p = brain.sessionProgress;
+    expect(brain.beginInterrupt(1)).toBe(true);
+    expect(brain.state).toBe('BURPEE');
+    expect(events.some((e) => e.type === 'exercisePaused' && e.equipmentId === 1)).toBe(true);
+    run(brain, 0.5);
+    expect(brain.state).toBe('BURPEE');
+    expect(brain.sessionProgress).toBe(p);
+    expect(brain.interruptProgress).toBeGreaterThan(0.4);
+    const starts = events.filter((e) => e.type === 'startExercise').length;
+    run(brain, 0.6);
+    expect(brain.state).toBe('EXERCISING');
+    expect(brain.targetId).toBe(1);
+    expect(brain.sessionProgress).toBeGreaterThanOrEqual(p);
+    expect(brain.sessionProgress).toBeLessThan(p + 0.2);
+    expect(events.filter((e) => e.type === 'startExercise').length).toBe(starts + 1);
+  });
+
+  it('걷는 중 버피 → 제자리에서 하고 같은 목표로 다시 걷기', () => {
+    const { brain, eq } = setup();
+    eq.push({ id: 1, usePoint: { x: 300, y: 0 } });
+    brain.onEquipmentPlaced();
+    run(brain, 0.5);
+    expect(brain.beginInterrupt(1)).toBe(true);
+    const pos = { ...brain.pos };
+    run(brain, 0.5);
+    expect(brain.pos).toEqual(pos);
+    run(brain, 0.6);
+    expect(brain.state).toBe('WALKING');
+    expect(brain.targetId).toBe(1);
+  });
+
+  it('바닥·일어나는 중 버피 → 끝나면 바로 다음 기구로 (바닥 재촉 불필요)', () => {
+    const { brain, eq } = setup({ rnd: () => 0 });
+    eq.push({ id: 1, usePoint: { x: 10, y: 0 } });
+    brain.onEquipmentPlaced();
+    until(brain, () => brain.state === 'EXHAUSTED');
+    brain.beginInterrupt(1);
+    run(brain, 1.1);
+    expect(['WALKING', 'EXERCISING']).toContain(brain.state);
+    until(brain, () => brain.state === 'EXHAUSTED');
+    for (let i = 0; i < 5; i++) {
+      brain.prod();
+      brain.update(0.15);
+    }
+    expect(brain.state).toBe('GETTING_UP');
+    brain.beginInterrupt(1);
+    run(brain, 1.1);
+    expect(['WALKING', 'EXERCISING']).toContain(brain.state);
+  });
+
+  it('버피 중 기구가 사라지면 새로 고른다 (없으면 릴스)', () => {
+    const { brain, eq } = setup();
+    eq.push({ id: 1, usePoint: { x: 10, y: 0 } });
+    brain.onEquipmentPlaced();
+    until(brain, () => brain.state === 'EXERCISING');
+    brain.beginInterrupt(1);
+    eq.length = 0;
+    run(brain, 1.1);
+    expect(brain.state).toBe('IDLE_REELS');
+  });
+
+  it('기절·축하·버피 중에는 버피를 시작하지 않는다', () => {
+    const { brain } = setup();
+    brain.state = 'FAINTED';
+    expect(brain.beginInterrupt(1)).toBe(false);
+    brain.state = 'CELEBRATING';
+    expect(brain.beginInterrupt(1)).toBe(false);
+    brain.state = 'IDLE_REELS';
+    expect(brain.beginInterrupt(1)).toBe(true);
+    expect(brain.beginInterrupt(1)).toBe(false);
+  });
+
+  it('순환형 잠금: 바닥 재촉·허코·나태 경고 없음, 벨 성공이면 일어나 이동', () => {
+    const { brain, events } = exhausted();
+    brain.floorProdLocked = true;
+    brain.prod();
+    expect(brain.prodCount).toBe(0);
+    expect(events.some((e) => e.type === 'toast' && e.text === STR.toastWaitBell)).toBe(true);
+    brain.applyBuff('heo');
+    run(brain, 1);
+    expect(brain.state).toBe('EXHAUSTED');
+    run(brain, 6);
+    expect(events.some((e) => e.type === 'lazyWarning')).toBe(false);
+    brain.bellAnswered();
+    expect(brain.state).toBe('GETTING_UP');
+    run(brain, 0.7);
+    expect(['WALKING', 'EXERCISING']).toContain(brain.state);
+  });
+
+  it('순환형: 릴스에서 벨 성공 → 기구 있으면 이동, 없으면 릴스', () => {
+    const { brain, eq } = setup();
+    brain.floorProdLocked = true;
+    brain.bellAnswered();
+    expect(brain.state).toBe('IDLE_REELS');
+    eq.push({ id: 2, usePoint: { x: 50, y: 0 } });
+    brain.bellAnswered();
+    expect(brain.state).toBe('WALKING');
+  });
+
+  it('벨 재촉도 나태 유예 재촉으로 센다', () => {
+    const { brain } = exhausted(() => 0.99);
+    brain.update(5.1);
+    for (let i = 0; i < 5; i++) {
+      expect(brain.bellProd()).toBe(true);
+      brain.update(0.15);
+    }
+    brain.update(2);
+    expect(brain.chimpPunished).toBe(false);
   });
 });
