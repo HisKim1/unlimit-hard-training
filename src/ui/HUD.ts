@@ -6,6 +6,7 @@ import { DEPTH } from '../fx/Effects';
 import { imageRef } from '../assets';
 import { STR, formatTime } from '../strings';
 import type { WodProgress } from '../systems/WodProgress';
+import { fitText } from './fitText';
 
 export interface HudCallbacks {
   onPause(): void;
@@ -13,6 +14,7 @@ export interface HudCallbacks {
 }
 
 export class HUD {
+  readonly title: Phaser.GameObjects.Text;
   private timer: Phaser.GameObjects.Text;
   private chips: { eq: string; text: Phaser.GameObjects.Text; icon: Phaser.GameObjects.Image; check: Phaser.GameObjects.Text }[] = [];
   private gauge: Phaser.GameObjects.Graphics;
@@ -44,9 +46,14 @@ export class HUD {
     this.muteText = btn(W - 36, '🔊', cb.onMute);
 
     const wod = progress.wod;
-    const titleStr = wod ? `Lv${wod.level} ${wod.name}` : STR.freeHud;
-    scene.add.text(76, 36, titleStr, { fontFamily: FONT, fontSize: '30px', color: '#ffffff' })
+    this.title = scene.add.text(76, 36, '', { fontFamily: FONT, fontSize: '30px', color: '#ffffff' })
       .setOrigin(0, 0.5).setDepth(DEPTH.hud);
+    const titleRight = W - 190; // 타이머(최대 "6:40") 왼쪽
+    if (wod) {
+      fitText(this.title, [`Lv${wod.level} ${wod.name}`, ...(wod.shortName ? [`Lv${wod.level} ${wod.shortName}`] : [])], titleRight - 76, 30, 24);
+    } else {
+      this.title.setText(STR.freeHud);
+    }
     this.timer = scene.add.text(W - 78, 36, '', { fontFamily: FONT, fontSize: '40px', color: '#ffffff', stroke: '#000', strokeThickness: 4 })
       .setOrigin(1, 0.5).setDepth(DEPTH.hud);
 

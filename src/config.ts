@@ -47,6 +47,7 @@ export const CONFIG = {
   BURNOUT_WARNING: 70,
   BURNOUT_FAINT: 100,
   CHALK_DROP_RADIUS_PX: 110, // 원장님 몸 근처 이 반경 안에 떨어뜨려야 초크 적용
+  FATIGUE_MIN_ANIM_SPEED: 0.35, // 지침으로 느려져도 모션 재생 속도는 이 아래로 내리지 않는다
 
   // ---- 버프 (사용 시점부터 쿨타임, 효과는 중첩하지 않음) ----
   BUFF_DURATION_SEC: 2,

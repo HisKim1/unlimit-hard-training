@@ -6,6 +6,7 @@ import { wodByLevel, type WodDef } from '../wods';
 import { STR, pick } from '../strings';
 import { Brain, type BrainEvent, type PoseTier } from '../systems/Brain';
 import { WodProgress } from '../systems/WodProgress';
+import { fatigueFactor, wodSessionSec } from '../systems/Fatigue';
 import { evaluatePlacement, pointInPolygon, slotPoints, type PlacedInfo } from '../systems/Placement';
 import { audio } from '../systems/Audio';
 import { save } from '../systems/Save';
@@ -117,7 +118,11 @@ export class GameScene extends Phaser.Scene {
         candidates: () => this.equipment
           .filter((e) => !e.removed && this.landed.has(e.id))
           .map((e) => ({ id: e.id, usePoint: e.usePoint })),
-        sessionDurationSec: (id) => this.eqById(id)?.def.sessionDurationSec ?? 5,
+        sessionDurationSec: (id) => {
+          const eq = this.eqById(id);
+          if (!eq) return 5;
+          return wodSessionSec(this.wod, eq.type, eq.def.sessionDurationSec, this.progress.done.get(eq.type) ?? 0, this.brain.sessionProgress);
+        },
       },
       CONFIG.WONJANG_START,
     );
@@ -293,6 +298,15 @@ export class GameScene extends Phaser.Scene {
       if (pool.length) return pick(pool);
     }
     return base;
+  }
+
+  /** 지침 WOD 에서 지금 운동 속도 계수 (1 = 보통). 모션 재생 속도에 쓴다. */
+  private currentFatigue(): number {
+    const f = this.wod?.fatigue;
+    const ex = this.view.exercise;
+    if (!f || !ex || ex.eq.type !== f.equipment) return 1;
+    const req = this.progress.required(f.equipment) || 1;
+    return fatigueFactor(f.endSpeed, ((this.progress.done.get(f.equipment) ?? 0) + this.brain.sessionProgress) / req);
   }
 
   private startExercise(id: number): void {
@@ -673,6 +687,7 @@ export class GameScene extends Phaser.Scene {
     });
     if (coachLeft) this.toast.show(`${STR.coachLeft}\n${STR.wonjangRelaxed}`, CONFIG.BUFF_DURATION_SEC * 1000);
     this.toolbar.refreshBuffs(id => this.brain.buffRemaining(id), id => this.brain.buffCooldown(id));
+    this.view.exerciseSpeed = this.currentFatigue();
     this.view.update(dt);
     this.toolbar.update(dt);
     this.hud.setBurnout(this.brain.burnout);

@@ -70,6 +70,11 @@ try {
       assert.ok(c.bottom <= 114 && c.left >= 0 && c.right <= 720, `level ${level}: ${JSON.stringify(c)}`);
       if (i) assert.ok(guide.chips[i - 1].right < c.left, 'requirement labels do not overlap');
     });
+    const fit = await page.evaluate(() => {
+      const s = window.__game.scene.getScene('Game');
+      return { title: s.hud.title.getBounds().right, timer: s.hud.timer.getBounds().left, text: s.hud.title.text };
+    });
+    assert.ok(fit.title <= fit.timer - 6, `level ${level}: HUD title "${fit.text}" overlaps timer`);
     if (guide.requirements.length === 3 && !shotThree) {
       shotThree = true;
       await page.screenshot({ path: 'artifacts/wod-guide-three.png' });
@@ -88,6 +93,19 @@ try {
       badge: s.toolbar.items.find(i => i.id === 'barbell').badge.visible };
   }), { highlighted: ['pullup'], done: '바벨\n3/3', checked: true, badge: false });
   await page.screenshot({ path: 'artifacts/wod-guide-completed.png' });
+  await page.evaluate(() => window.__game.scene.getScenes(true)[0].scene.start('LevelSelect'));
+  await page.waitForFunction(() => window.__game.scene.isActive('LevelSelect'));
+  const cards = await page.evaluate(() => {
+    const s = window.__game.scene.getScene('LevelSelect');
+    const r = (o) => { const b = o.getBounds(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+    return s.list.list.filter((c) => c.type === 'Container' && c.list[1]?.text?.startsWith('Lv')).map((c) => {
+      const [, , name, desc, info, ...rest] = c.list;
+      return { card: r(c), name: r(name), text: name.text, desc: r(desc), info: r(info), icons: rest.filter((o) => o.type === 'Image').map(r) };
+    });
+  });
+  assert.equal(cards.length, wodCount);
+  for (const k of cards) assert.ok(k.name.r <= k.card.r - 60, `card title fits: ${k.text}`);
+  await page.screenshot({ path: 'artifacts/level-select.png' });
   console.log('PASS all WOD names/counts fit, needed-only highlights, completed highlight clears');
   await start();
   await pointer(76, 1205);

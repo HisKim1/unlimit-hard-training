@@ -22,6 +22,12 @@ export interface WodDef {
   /** 이 WOD 에서 기구가 수행할 동작 (예: 매트 → 싯업, 바벨 → 데드리프트) */
   overrides?: Partial<Record<EquipmentId, MotionPreset>>;
   bonus?: boolean; // SPEC 5레벨 이후 추가분
+  /** HUD·카드에서 이름이 넘칠 때 쓰는 짧은 이름 */
+  shortName?: string;
+  /** 기구별 세션 시간(초) 덮어쓰기 */
+  sessionSec?: Partial<Record<EquipmentId, number>>;
+  /** 연속 지수 감속: 진행률 p 에서 운동 속도 = endSpeed^p (스펙 11장) */
+  fatigue?: { equipment: EquipmentId; endSpeed: number };
 }
 
 type WodSpec = Omit<WodDef, 'level'>;
@@ -40,6 +46,15 @@ const WOD_LIST: WodSpec[] = [
     id: 'karen', name: 'Karen', nameKo: '캐런', original: '월볼 샷 150개', timeCapSec: 85, bonus: true,
     requirements: [
       { equipment: 'wallball', sessions: 5, labels: rep('월볼 30개', 5) },
+    ],
+  },
+  {
+    id: 'devil1000', name: '데빌프레스나 1000개 시켜ㅠ', nameKo: '성지윤', shortName: '데빌 1000',
+    original: '성지윤 WOD: 데빌프레스 1000개, 10초에 100개씩', timeCapSec: 400, bonus: true,
+    sessionSec: { dumbbell: 10 },
+    fatigue: { equipment: 'dumbbell', endSpeed: 1 / 8 },
+    requirements: [
+      { equipment: 'dumbbell', sessions: 10, labels: Array.from({ length: 10 }, (_, i) => `데빌프레스 ${(i + 1) * 100}/1000`) },
     ],
   },
   {

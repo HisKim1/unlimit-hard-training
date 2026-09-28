@@ -8,6 +8,7 @@ import { save } from '../systems/Save';
 import { audio } from '../systems/Audio';
 import { imageRef } from '../assets';
 import { makeButton } from '../ui/Button';
+import { fitText } from '../ui/fitText';
 
 export class LevelSelectScene extends Phaser.Scene {
   private list!: Phaser.GameObjects.Container;
@@ -42,7 +43,8 @@ export class LevelSelectScene extends Phaser.Scene {
       g.lineStyle(3, unlocked ? (w.bonus ? COLORS.warn : COLORS.accentBlue) : 0x333a44, 1);
       g.strokeRoundedRect(-(W - 60) / 2, -cardH / 2, W - 60, cardH, 22);
       const lv = this.add.text(-(W - 60) / 2 + 24, -46, `Lv${w.level}`, { fontFamily: FONT, fontSize: '28px', color: unlocked ? '#8fb4ff' : '#666' }).setOrigin(0, 0.5);
-      const name = this.add.text(-(W - 60) / 2 + 100, -46, `${w.name} · ${w.nameKo}`, { fontFamily: FONT, fontSize: '32px', color: unlocked ? '#ffffff' : '#666' }).setOrigin(0, 0.5);
+      const name = this.add.text(-(W - 60) / 2 + 100, -46, '', { fontFamily: FONT, fontSize: '32px', color: unlocked ? '#ffffff' : '#666' }).setOrigin(0, 0.5);
+      fitText(name, [`${w.name} · ${w.nameKo}`, ...(w.shortName ? [`${w.shortName} · ${w.nameKo}`] : [])], (W - 60) - 100 - 70, 32, 24);
       const desc = this.add.text(-(W - 60) / 2 + 24, 2, w.original, {
         fontFamily: FONT, fontSize: '21px', color: unlocked ? '#c9d4e0' : '#555', wordWrap: { width: W - 250, useAdvancedWrap: true }, lineSpacing: 2,
       }).setOrigin(0, 0.5);

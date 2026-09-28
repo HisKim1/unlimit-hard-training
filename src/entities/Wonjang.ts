@@ -33,6 +33,8 @@ export class WonjangView {
 
   exercise: ExerciseView | null = null;
   floorPose = 'floor_01';
+  /** 지침 계수 (GameScene 이 매 프레임 넣는다). 운동 모션 재생 속도에 곱한다. */
+  exerciseSpeed = 1;
   private animKey = '';
   private t = 0;
   private staggerMs = 0;
@@ -186,7 +188,8 @@ export class WonjangView {
 
     this.refreshAnim();
     s.anims.timeScale = b.speedMult * (b.state === 'EXERCISING' && b.buffRemaining('chalk') > 0
-      ? CONFIG.CHALK_EXERCISE_MULT : b.state === 'WALKING' && b.buffRemaining('bong') > 0 ? CONFIG.BONG_WALK_MULT : 1);
+      ? CONFIG.CHALK_EXERCISE_MULT : b.state === 'WALKING' && b.buffRemaining('bong') > 0 ? CONFIG.BONG_WALK_MULT : 1)
+      * (b.state === 'EXERCISING' ? Math.max(CONFIG.FATIGUE_MIN_ANIM_SPEED, this.exerciseSpeed) : 1);
 
     // 운동 중 모션 교대 (푸쉬업 → 스쿼트)
     if (b.state === 'EXERCISING' && this.exercise && this.exercise.anims.length > 1) {
