@@ -55,7 +55,9 @@ try {
   }
   await start();
   await page.screenshot({ path: 'artifacts/game.png' });
-  for (let level = 1; level <= 8; level++) {
+  const wodCount = await page.evaluate(() => window.__wods.length);
+  let shotThree = false;
+  for (let level = 1; level <= wodCount; level++) {
     await start(level);
     const guide = await page.evaluate(() => {
       const s = window.__game.scene.getScene('Game');
@@ -68,7 +70,10 @@ try {
       assert.ok(c.bottom <= 114 && c.left >= 0 && c.right <= 720, `level ${level}: ${JSON.stringify(c)}`);
       if (i) assert.ok(guide.chips[i - 1].right < c.left, 'requirement labels do not overlap');
     });
-    if (level === 4) await page.screenshot({ path: 'artifacts/wod-guide-three.png' });
+    if (guide.requirements.length === 3 && !shotThree) {
+      shotThree = true;
+      await page.screenshot({ path: 'artifacts/wod-guide-three.png' });
+    }
   }
   await start();
   await page.evaluate(() => {

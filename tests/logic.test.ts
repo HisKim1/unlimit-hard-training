@@ -87,6 +87,16 @@ describe('WodProgress (SPEC 9장)', () => {
     expect(p.peek('barbell', '스러스터')).toEqual({ label: '스러스터', counts: false });
     expect(p.complete).toBe(false);
   });
+
+  it('레벨은 배열 순서대로 1부터 빈틈없이, id 는 중복 없음', () => {
+    WODS.forEach((w, i) => expect(w.level).toBe(i + 1));
+    expect(new Set(WODS.map((w) => w.id)).size).toBe(WODS.length);
+  });
+
+  it('기존 WOD 상대 순서 (스펙 10장, 새 WOD 제외)', () => {
+    const known = ['fran', 'karen', 'diane', 'jackie', 'tommyv', 'annie', 'helen', 'jerry', 'cindy', 'christine', 'kelly', 'nate', 'murph'];
+    expect(WODS.map((w) => w.id).filter((id) => known.includes(id))).toEqual(known);
+  });
 });
 
 describe('Placement (SPEC 8.2)', () => {

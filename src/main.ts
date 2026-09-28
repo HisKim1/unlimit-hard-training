@@ -11,6 +11,7 @@ import { LevelSelectScene } from './scenes/LevelSelectScene';
 import { GameScene } from './scenes/GameScene';
 import { ResultScene } from './scenes/ResultScene';
 import { SpriteViewerScene } from './scenes/SpriteViewerScene';
+import { WODS } from './wods';
 
 async function waitForFont(): Promise<void> {
   try {
@@ -48,6 +49,7 @@ async function start(): Promise<void> {
 
   // 디버그·자동 테스트용 핸들
   (window as unknown as { __game?: Phaser.Game }).__game = game;
+  (window as unknown as { __wods?: typeof WODS }).__wods = WODS;
   (window as unknown as { render_game_to_text: () => string }).render_game_to_text = () => JSON.stringify({
     scenes: game.scene.getScenes(true).map(s => s.scene.key), audio: audio.musicState,
   });
