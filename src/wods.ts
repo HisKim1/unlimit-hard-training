@@ -2,6 +2,7 @@
 // 레벨 번호는 WOD_LIST 순서로 1부터 매긴다. 순서는 docs/superpowers/specs/2026-09-28-emom-wod-design.md 10장.
 import type { EquipmentId } from './equipment';
 import { MOTION_PRESETS, type MotionPreset } from './equipment';
+import { STR } from './strings';
 
 export interface WodRequirement {
   equipment: EquipmentId;
@@ -28,6 +29,8 @@ export interface WodDef {
   sessionSec?: Partial<Record<EquipmentId, number>>;
   /** 연속 지수 감속: 진행률 p 에서 운동 속도 = endSpeed^p (스펙 11장) */
   fatigue?: { equipment: EquipmentId; endSpeed: number };
+  /** 응원 버튼 이름·대사 덮어쓰기 (대사는 기본 대사와 섞는다) */
+  cheer?: { names: readonly string[]; lines: readonly string[] };
 }
 
 type WodSpec = Omit<WodDef, 'level'>;
@@ -53,6 +56,7 @@ const WOD_LIST: WodSpec[] = [
     original: '성지윤 WOD: 데빌프레스 1000개, 10초에 100개씩', timeCapSec: 400, bonus: true,
     sessionSec: { dumbbell: 10 },
     fatigue: { equipment: 'dumbbell', endSpeed: 1 / 8 },
+    cheer: { names: ['성지윤'], lines: STR.jiyunCheerLines },
     requirements: [
       { equipment: 'dumbbell', sessions: 10, labels: Array.from({ length: 10 }, (_, i) => `데빌프레스 ${(i + 1) * 100}/1000`) },
     ],
@@ -153,4 +157,10 @@ export const WODS: WodDef[] = WOD_LIST.map((w, i) => ({ ...w, level: i + 1 }));
 
 export function wodByLevel(level: number): WodDef | undefined {
   return WODS.find((w) => w.level === level);
+}
+
+/** 응원 버튼에서 뽑을 이름·대사 */
+export function cheerPool(wod: WodDef | null): { names: readonly string[]; lines: readonly string[] } {
+  if (!wod?.cheer) return { names: STR.cheerNames, lines: STR.cheerLines };
+  return { names: wod.cheer.names, lines: [...wod.cheer.lines, ...STR.cheerLines] };
 }

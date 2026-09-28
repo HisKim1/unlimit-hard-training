@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../src/config';
 import { evaluatePlacement, pointInPolygon, type PlacedInfo } from '../src/systems/Placement';
 import { SAVE_KEY, SaveStore, type KV } from '../src/systems/Save';
+import { STR } from '../src/strings';
 import { WodProgress } from '../src/systems/WodProgress';
-import { WODS } from '../src/wods';
+import { WODS, cheerPool } from '../src/wods';
 
 class MemKV implements KV {
   m = new Map<string, string>();
@@ -144,5 +145,21 @@ describe('Placement (SPEC 8.2)', () => {
       expect(evaluatePlacement('barbell', p, [], null)).toMatchObject({ ok: true, pos: p });
     }
     expect(evaluatePlacement('barbell', { x: 150, y: 620 }, [], null).ok).toBe(false);
+  });
+});
+
+describe('응원 풀 (스펙 11장)', () => {
+  it('성지윤 WOD 는 이름 고정, 전용 대사 + 기본 대사', () => {
+    const devil = WODS.find((w) => w.id === 'devil1000')!;
+    const p = cheerPool(devil);
+    expect(p.names).toEqual(['성지윤']);
+    expect(p.lines).toEqual([...STR.jiyunCheerLines, ...STR.cheerLines]);
+    expect(STR.jiyunCheerLines).toContain('우ㅜㅜㅜ 원장님을 향한 맹목적 비난 ㅇ우ㅜㅜ우ㅜ우우');
+    expect(STR.jiyunCheerLines).toHaveLength(11);
+  });
+
+  it('다른 WOD·자유 모드는 기본 풀', () => {
+    expect(cheerPool(WODS[0])).toEqual({ names: STR.cheerNames, lines: STR.cheerLines });
+    expect(cheerPool(null)).toEqual({ names: STR.cheerNames, lines: STR.cheerLines });
   });
 });

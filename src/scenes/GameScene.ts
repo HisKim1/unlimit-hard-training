@@ -2,7 +2,7 @@
 import Phaser from 'phaser';
 import { COLORS, CONFIG, DEBUG, FONT, TIME_SCALE, depthScale, spriteScale, type Point } from '../config';
 import { EQUIPMENT, FREE_MODE_EXTRA_MOTIONS, type EquipmentId, type MotionPreset } from '../equipment';
-import { wodByLevel, type WodDef } from '../wods';
+import { cheerPool, wodByLevel, type WodDef } from '../wods';
 import { STR, pick } from '../strings';
 import { Brain, type BrainEvent, type PoseTier } from '../systems/Brain';
 import { WodProgress } from '../systems/WodProgress';
@@ -505,7 +505,8 @@ export class GameScene extends Phaser.Scene {
       .setSize(r * 2 + 16, r * 2 + 16).setDepth(DEPTH.toolbar - 1).setInteractive({ useHandCursor: true });
     this.cheerBtn.on('pointerdown', () => {
       if (this.paused || this.ended || !this.brain.cheer()) return;
-      this.cheerToast.show(`미모반 ${pick(STR.cheerNames)}:\n${pick(STR.cheerLines)}`, 3000, '#173826');
+      const pool = cheerPool(this.wod);
+      this.cheerToast.show(`미모반 ${pick(pool.names)}:\n${pick(pool.lines)}`, 3000, '#173826');
       audio.play('ding');
     });
   }

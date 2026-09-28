@@ -53,6 +53,24 @@ try {
     s.ended = true; s.cheerBtn.emit('pointerdown');
   });
   assert.equal((await state()).visible, false);
+  await page.evaluate(() => {
+    const w = window.__wods.find((x) => x.id === 'devil1000');
+    window.__game.scene.getScene('Game').scene.start('Game', { level: w.level });
+  });
+  await page.waitForFunction(() => window.__game.scene.getScene('Game').wod?.id === 'devil1000');
+  const jiyun = await page.evaluate(() => {
+    const s = window.__game.scene.getScene('Game');
+    const out = [];
+    for (let i = 0; i < 20; i++) {
+      s.brain.lastCheerMs = -Infinity;
+      s.cheerBtn.emit('pointerdown');
+      out.push(s.cheerToast.text.text);
+    }
+    return out;
+  });
+  for (const t of jiyun) assert.match(t, /^미모반 성지윤:\n/);
+  assert.ok(jiyun.some((t) => /대충한다|노랩노랩|데빌프레스로 쳐줘요|추가운동|런닝|맹목적 비난|300개|내려놓지|반만|치킨|자나여/.test(t)), 'dedicated lines appear');
+  await page.screenshot({ path: 'artifacts/cheer-jiyun.png' });
   assert.deepEqual(errors, []);
-  console.log('PASS cheer touch, mirrored button, name, separate bubble, cooldown, pause, 3s hold/fade, ended guard');
+  console.log('PASS cheer touch, mirrored button, name, separate bubble, cooldown, pause, 3s hold/fade, ended guard, Jiyun-only in devil1000');
 } finally { await browser.close(); }
