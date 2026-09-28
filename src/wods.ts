@@ -87,6 +87,47 @@ export const WODS: WodDef[] = [
       { equipment: 'wallball', sessions: 3, labels: rep('월볼 30개', 3) },
     ],
   },
+  {
+    id: 'christine', level: 9, name: 'Christine', nameKo: '크리스틴', original: '3라운드: 500m 로잉, 데드리프트 12, 박스 점프 21', timeCapSec: 180, bonus: true,
+    overrides: { barbell: MOTION_PRESETS.deadlift },
+    requirements: [
+      { equipment: 'rower', sessions: 3, labels: rep('로잉 500m', 3) },
+      { equipment: 'barbell', sessions: 3, labels: rep('데드리프트 12개', 3) },
+      { equipment: 'box', sessions: 3, labels: rep('박스 점프 21개', 3) },
+    ],
+  },
+  {
+    id: 'tommyv', level: 10, name: 'Tommy V', nameKo: '토미 V', original: '21-15-9 스러스터, 12-9-6 로프 클라임', timeCapSec: 130, bonus: true,
+    requirements: [
+      { equipment: 'barbell', sessions: 3, labels: ['스러스터 21개', '스러스터 15개', '스러스터 9개'] },
+      { equipment: 'rope', sessions: 3, labels: ['로프 클라임 12회', '로프 클라임 9회', '로프 클라임 6회'] },
+    ],
+  },
+  {
+    id: 'cindy', level: 11, name: 'Cindy', nameKo: '신디 (박스 변형)', original: '20분 AMRAP: 풀업 5, 푸쉬업 10, 스쿼트 15', timeCapSec: 175, bonus: true,
+    overrides: { mat: MOTION_PRESETS.pushup_squat },
+    requirements: [
+      { equipment: 'pullup', sessions: 5, labels: rep('풀업 5개', 5) },
+      { equipment: 'mat', sessions: 5, labels: rep('푸쉬업 10개 + 스쿼트 15개', 5) },
+    ],
+  },
+  {
+    id: 'nate', level: 12, name: 'Nate', nameKo: '네이트 (박스 변형)', original: '20분 AMRAP: 머슬업 2, HSPU 4, KB 스윙 8', timeCapSec: 190, bonus: true,
+    overrides: { mat: MOTION_PRESETS.pushup },
+    requirements: [
+      { equipment: 'rings', sessions: 3, labels: rep('링 머슬업 2개', 3) },
+      { equipment: 'mat', sessions: 3, labels: rep('푸쉬업 4개 (HSPU 대체)', 3) },
+      { equipment: 'kettlebell', sessions: 3, labels: rep('KB 스윙 8개', 3) },
+    ],
+  },
+  {
+    id: 'jerry', level: 13, name: 'Jerry', nameKo: '제리 (박스 변형)', original: '1마일 달리기, 2K 로잉, 1마일 달리기', timeCapSec: 115, bonus: true,
+    requirements: [
+      { equipment: 'bike', sessions: 2, labels: rep('바이크 800m (런 대체)', 2) },
+      { equipment: 'rower', sessions: 2, labels: rep('로잉 1000m', 2) },
+      { equipment: 'ski', sessions: 2, labels: rep('스키 800m (런 대체)', 2) },
+    ],
+  },
 ];
 
 export function wodByLevel(level: number): WodDef | undefined {
