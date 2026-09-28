@@ -28,7 +28,9 @@ export type BrainEvent =
   | { type: 'poseSwap' } // 기구 없이 누워 있을 때 4~6초마다 다른 포즈
   | { type: 'prod'; kind: 'reels' | 'floor' | 'active' | 'none' }
   | { type: 'burnoutWarning' }
-  | { type: 'fainted' };
+  | { type: 'fainted' }
+  | { type: 'lazyWarning' } // 바닥에서 오래 재촉이 없음 (스펙 12장)
+  | { type: 'chimpPunished' }; // 경고 후 유예 안에 재촉이 부족해 이번 판 침팬지 확률 상승
 
 export interface BrainWorld {
   /** 현재 놓인 기구들 (원장님이 사용할 수 있는 것만) */
@@ -62,6 +64,12 @@ export class Brain {
   private lastCheerMs = -Infinity;
   private cheerPending = false;
   private floorCheered = false;
+  /** 이번 판에서 나태 벌칙(침팬지 확률 상승)을 받았는가. 되돌아가지 않는다. */
+  chimpPunished = false;
+  private exhaustedAtMs = 0;
+  private lazyWarned = false;
+  private graceUntilMs = -1;
+  private graceProds = 0;
 
   constructor(
     private readonly world: BrainWorld,
@@ -131,6 +139,8 @@ export class Brain {
     this.floorCheered = this.cheerPending;
     this.cheerPending = false;
     this.newProdTarget();
+    this.exhaustedAtMs = this.clockMs;
+    this.lazyWarned = false;
     this.setState('EXHAUSTED');
     this.setTier('base', true);
     this.schedulePoseSwap();
@@ -186,6 +196,7 @@ export class Brain {
   prod(): boolean {
     if (this.prodCoolingDown) return false;
     this.lastProdMs = this.clockMs;
+    this.countGraceProd();
     switch (this.state) {
       case 'IDLE_REELS':
         this.emit({ type: 'prod', kind: 'reels' });
@@ -202,6 +213,11 @@ export class Brain {
         this.emit({ type: 'prod', kind: 'none' });
     }
     return true;
+  }
+
+  /** 나태 경고 유예 중이면 받아들여진 재촉을 센다 */
+  private countGraceProd(): void {
+    if (this.graceUntilMs >= 0) this.graceProds++;
   }
 
   private floorProd(notify = true): void {
@@ -317,6 +333,14 @@ export class Brain {
     this.clockMs += dtMs;
     this.stateTimerMs += dtMs;
     const c = this.cfg;
+    // 나태 경고 후 유예 판정
+    if (this.graceUntilMs >= 0 && this.clockMs >= this.graceUntilMs - 1e-6) {
+      if (this.graceProds < c.LAZY_GRACE_PRODS && !this.chimpPunished) {
+        this.chimpPunished = true;
+        this.emit({ type: 'chimpPunished' });
+      }
+      this.graceUntilMs = -1;
+    }
 
     // 속도 배율 복귀: 마지막 재촉 후 2초가 지나면 서서히 1.0으로
     if (this.speedMult > 1 && this.clockMs - this.lastActiveProdMs > c.SPEED_DECAY_DELAY_SEC * 1000) {
@@ -369,6 +393,12 @@ export class Brain {
         break;
       }
       case 'EXHAUSTED': {
+        if (!this.lazyWarned && this.clockMs - Math.max(this.lastProdMs, this.exhaustedAtMs) >= c.LAZY_WARN_SEC * 1000 - 1e-6) {
+          this.lazyWarned = true;
+          this.graceUntilMs = this.clockMs + c.LAZY_GRACE_SEC * 1000;
+          this.graceProds = 0;
+          this.emit({ type: 'lazyWarning' });
+        }
         this.heoProdSec += heoSec;
         while (this.heoProdSec + 1e-9 >= c.HEO_PROD_INTERVAL_SEC && this.state === 'EXHAUSTED') {
           this.heoProdSec -= c.HEO_PROD_INTERVAL_SEC;

@@ -5,6 +5,7 @@ import { EQUIPMENT, FREE_MODE_EXTRA_MOTIONS, type EquipmentId, type MotionPreset
 import { cheerPool, wodByLevel, type WodDef } from '../wods';
 import { STR, pick } from '../strings';
 import { Brain, type BrainEvent, type PoseTier } from '../systems/Brain';
+import { chimpChance } from '../systems/Chimp';
 import { WodProgress } from '../systems/WodProgress';
 import { fatigueFactor, wodSessionSec } from '../systems/Fatigue';
 import { evaluatePlacement, pointInPolygon, slotPoints, type PlacedInfo } from '../systems/Placement';
@@ -206,6 +207,12 @@ export class GameScene extends Phaser.Scene {
       // 쿨타임 중: 입력 무시, 버튼은 눌린 채
       return;
     }
+    this.prodFeedback();
+    this.rollChimp();
+  }
+
+  /** 재촉 버튼 눌림·소리·진동·찰싹 이펙트 */
+  private prodFeedback(): void {
     this.prodPressedMs = CONFIG.PROD_COOLDOWN_MS;
     this.drawProdButton(true);
     audio.play('slap');
@@ -217,20 +224,23 @@ export class GameScene extends Phaser.Scene {
     const c = this.view.bodyCenter;
     this.fx.slap(c.x, c.y);
     this.view.hit();
-    if (!this.ended && this.chimpRoll() < 0.001) {
-      const lost = this.progress.forget();
-      this.hud.refreshProgress();
-      this.toolbar.setHighlighted(this.wod?.requirements.filter(r => this.progress.remaining(r.equipment) > 0).map(r => r.equipment) ?? []);
-      const detail = lost.length ? `\n차감: ${lost.map(r => `${EQUIPMENT[r.equipment].name} −${r.count}`).join(' · ')}` : '';
-      this.toast.show(STR.toastChimp + detail, 2700, '#ffffff', true, true);
-      audio.play('warn');
-      this.tweens.killTweensOf(this.chimpVignette);
-      this.chimpVignette.setAlpha(0);
-      this.tweens.add({
-        targets: this.chimpVignette, alpha: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.25 : 0.85,
-        duration: 450, yoyo: true, repeat: 2, ease: 'Sine.easeInOut',
-      });
-    }
+  }
+
+  /** 침팬지 경고: 완료 세션 1~3회 망각 (스펙 12장 확률) */
+  private rollChimp(): void {
+    if (this.ended || this.chimpRoll() >= chimpChance(this.brain.chimpPunished)) return;
+    const lost = this.progress.forget();
+    this.hud.refreshProgress();
+    this.toolbar.setHighlighted(this.wod?.requirements.filter(r => this.progress.remaining(r.equipment) > 0).map(r => r.equipment) ?? []);
+    const detail = lost.length ? `\n차감: ${lost.map(r => `${EQUIPMENT[r.equipment].name} −${r.count}`).join(' · ')}` : '';
+    this.toast.show(STR.toastChimp + detail, CONFIG.CHIMP_TOAST_MS, '#ffffff', true, true);
+    audio.play('warn');
+    this.tweens.killTweensOf(this.chimpVignette);
+    this.chimpVignette.setAlpha(0);
+    this.tweens.add({
+      targets: this.chimpVignette, alpha: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.25 : 0.85,
+      duration: CONFIG.CHIMP_PULSE_MS, yoyo: true, repeat: 2, ease: 'Sine.easeInOut',
+    });
   }
 
   // ------------------------------------------------------------ Brain 이벤트
@@ -268,6 +278,13 @@ export class GameScene extends Phaser.Scene {
         break;
       case 'burnoutWarning':
         audio.play('warn');
+        break;
+      case 'lazyWarning':
+        this.toast.show(STR.toastLazy, CONFIG.CHIMP_TOAST_MS, '#ffffff', false, true);
+        audio.play('warn');
+        break;
+      case 'chimpPunished':
+        this.toast.show(STR.toastChimpPunished(CONFIG.CHIMP_CHANCE_LAZY * 100), CONFIG.TOAST_MS * 2, '#ffc53d');
         break;
       case 'fainted':
         this.fail('fainted');

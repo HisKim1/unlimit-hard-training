@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../src/config';
 import { Brain, type BrainEvent } from '../src/systems/Brain';
 import type { Candidate } from '../src/systems/Targeting';
+import { chimpChance } from '../src/systems/Chimp';
 
 function setup(opts: { rnd?: () => number; equipment?: Candidate[] } = {}) {
   const eq: Candidate[] = opts.equipment ?? [];
@@ -15,6 +16,19 @@ function setup(opts: { rnd?: () => number; equipment?: Candidate[] } = {}) {
 /** dt 를 잘게 나눠 시간 진행 */
 function run(brain: Brain, sec: number, step = 1 / 60) {
   for (let t = 0; t < sec; t += step) brain.update(step);
+}
+
+/** 조건이 참이 될 때까지 잘게 진행 */
+function until(brain: Brain, pred: () => boolean, max = 10, step = 1 / 60) {
+  for (let t = 0; t < max && !pred(); t += step) brain.update(step);
+}
+
+function exhausted(rnd: () => number = () => 0) {
+  const s = setup({ rnd });
+  s.eq.push({ id: 1, usePoint: { x: 10, y: 0 } });
+  s.brain.onEquipmentPlaced();
+  until(s.brain, () => s.brain.state === 'EXHAUSTED');
+  return s;
 }
 
 describe('Brain 상태 기계 (SPEC 5장)', () => {
@@ -304,5 +318,64 @@ describe('재촉 + 번아웃 (SPEC 6장)', () => {
     brain.update(1);
     expect(brain.prodCount).toBe(0);
     expect(brain.applyBuff('heo')).toBe(false);
+  });
+});
+
+describe('나태 경고 · 침팬지 (스펙 12장)', () => {
+  const warnings = (events: BrainEvent[]) => events.filter((e) => e.type === 'lazyWarning').length;
+
+  it('기본 확률 0.5%, 벌칙 1%', () => {
+    expect(chimpChance(false)).toBe(0.005);
+    expect(chimpChance(true)).toBe(0.01);
+  });
+
+  it('바닥에서 5초 재촉이 없으면 한 번만 경고', () => {
+    const { brain, events } = exhausted();
+    brain.update(4.8);
+    expect(warnings(events)).toBe(0);
+    brain.update(0.3);
+    expect(warnings(events)).toBe(1);
+    brain.update(10);
+    expect(warnings(events)).toBe(1);
+  });
+
+  it('재촉하면 5초 타이머가 다시 시작', () => {
+    const { brain, events } = exhausted();
+    brain.update(3);
+    brain.prod();
+    brain.update(4.8);
+    expect(warnings(events)).toBe(0);
+    brain.update(0.3);
+    expect(warnings(events)).toBe(1);
+  });
+
+  it('경고 후 2초 안에 5번 재촉하면 확률 유지', () => {
+    const { brain, events } = exhausted(() => 0.99); // N = 10 이라 5번으로는 안 일어남
+    brain.update(5.1);
+    for (let i = 0; i < 5; i++) {
+      expect(brain.prod()).toBe(true);
+      brain.update(0.15);
+    }
+    brain.update(2);
+    expect(brain.chimpPunished).toBe(false);
+    expect(events.some((e) => e.type === 'chimpPunished')).toBe(false);
+  });
+
+  it('4번이면 그 판 내내 1%, 일어나도 유지', () => {
+    const { brain, events } = exhausted(() => 0.99);
+    brain.update(5.1);
+    for (let i = 0; i < 4; i++) {
+      brain.prod();
+      brain.update(0.15);
+    }
+    brain.update(2);
+    expect(brain.chimpPunished).toBe(true);
+    expect(events.filter((e) => e.type === 'chimpPunished').length).toBe(1);
+    for (let i = 0; i < 6; i++) {
+      brain.prod();
+      brain.update(0.15);
+    }
+    until(brain, () => brain.state !== 'EXHAUSTED' && brain.state !== 'GETTING_UP');
+    expect(brain.chimpPunished).toBe(true);
   });
 });

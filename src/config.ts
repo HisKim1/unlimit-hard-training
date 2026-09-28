@@ -49,6 +49,15 @@ export const CONFIG = {
   CHALK_DROP_RADIUS_PX: 110, // 원장님 몸 근처 이 반경 안에 떨어뜨려야 초크 적용
   FATIGUE_MIN_ANIM_SPEED: 0.35, // 지침으로 느려져도 모션 재생 속도는 이 아래로 내리지 않는다
 
+  // ---- 침팬지 · 나태 (스펙 12장) ----
+  CHIMP_CHANCE: 0.005, // 받아들여진 재촉 1번당
+  CHIMP_CHANCE_LAZY: 0.01, // 나태 벌칙을 받은 판
+  CHIMP_TOAST_MS: 2700,
+  CHIMP_PULSE_MS: 450, // 붉은 테두리 켜짐(또는 꺼짐) 시간
+  LAZY_WARN_SEC: 5,
+  LAZY_GRACE_SEC: 2,
+  LAZY_GRACE_PRODS: 5,
+
   // ---- 버프 (사용 시점부터 쿨타임, 효과는 중첩하지 않음) ----
   BUFF_DURATION_SEC: 2,
   BUFF_COOLDOWN_SEC: 10,

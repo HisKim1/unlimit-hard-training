@@ -63,6 +63,8 @@ export const STR = {
   toastFloorHigh: ['원장님이 일어나려 합니다! 좀 더 재촉해볼까요?'],
   toastGotUp: '원장님이 일어났습니다!',
   toastChimp: 'WARNING! 전방에 침팬지 출현!\n원장님이 개수를 까먹었습니다!',
+  toastLazy: 'WARNING! 원장님이 너무 나태합니다!\n빨리 재촉 안 하면 침팬지가 등장할수도?!',
+  toastChimpPunished: (pct: number) => `침팬지 등장 확률이 ${pct}%로 올랐습니다!`,
   toastSpeedUp: '원장님이 속도를 올립니다!',
   toastGaveUp: '원장님: 나 안 해!',
   toastBurnoutWarning: '원장님이 번아웃 오기 직전입니다. 다른 박스로 옮길지도 몰라요!',
