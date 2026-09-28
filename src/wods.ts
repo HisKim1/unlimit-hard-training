@@ -53,7 +53,7 @@ const WOD_LIST: WodSpec[] = [
   },
   {
     id: 'devil1000', name: '데빌프레스나 1000개 시켜ㅠ', nameKo: '성지윤', shortName: '데빌 1000',
-    original: '성지윤 WOD: 데빌프레스 1000개, 10초에 100개씩', timeCapSec: 400, bonus: true,
+    original: '성지윤 WOD: 데빌프레스 1000개, 10초에 100개씩', timeCapSec: 365, bonus: true,
     sessionSec: { dumbbell: 10 },
     fatigue: { equipment: 'dumbbell', endSpeed: 1 / 8 },
     cheer: { names: ['성지윤'], lines: STR.jiyunCheerLines },

@@ -6,6 +6,7 @@ import { chromium } from 'playwright-core';
 const LEVELS = (process.argv[2] || '1,2,3,4,5,6,7,8').split(',').map(Number);
 const SPEED = Number(process.argv[3] || 2);
 const OUT = process.argv[4] || '.';
+const MODE = process.argv[5] || 'basic'; // assist: 능동 재촉 + 탄마·종코·허코 사용
 const URL = (process.env.URL || 'http://localhost:5173/') + `?speed=${SPEED}`;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -115,6 +116,7 @@ for (const level of LEVELS) {
   let prods = 0;
   let placedCount = 0;
   let lastPlaceTry = 0;
+  let lastActive = 0;
   while (Date.now() - t0 < 400000 / SPEED) {
     s = await snap();
     if (s.keys[0] === '(loading)') {
@@ -130,11 +132,28 @@ for (const level of LEVELS) {
       result = r.complete ? `CLEAR ${r.elapsed.toFixed(1)}s` : `FAIL(${r.state}) ${r.elapsed.toFixed(1)}s`;
       break;
     }
+    if (MODE === 'assist' && s.state === 'EXHAUSTED') {
+      await page.evaluate(() => {
+        const g = window.__game.scene.getScene('Game');
+        if (g.brain.buffCooldown('heo') === 0 && g.brain.applyBuff('heo')) g.showBuff('heo', g.brain.pos);
+      });
+    }
     if (s.state === 'EXHAUSTED') {
       await tap(608, 1040);
       prods++;
       await sleep(Math.max(60, 230 / SPEED));
       continue;
+    }
+    if (MODE === 'assist' && s.state === 'EXERCISING') {
+      if (s.burnout < 40 && Date.now() - lastActive > 250 / SPEED) {
+        lastActive = Date.now();
+        await tap(608, 1040);
+      }
+      await page.evaluate(() => {
+        const g = window.__game.scene.getScene('Game');
+        if (g.brain.buffCooldown('chalk') === 0 && g.brain.applyBuff('chalk')) g.showBuff('chalk', g.brain.pos);
+        if (g.brain.burnout > 20 && g.brain.buffCooldown('jong') === 0 && g.brain.applyBuff('jong')) g.showBuff('jong', g.brain.pos);
+      });
     }
     // 필요한 기구 보충
     if (Date.now() - lastPlaceTry > 300) {
@@ -150,7 +169,7 @@ for (const level of LEVELS) {
     await sleep(80);
   }
   const cap = s.cap || 0;
-  report.push(`Lv${level}: ${result} / cap ${cap}s, placed ${placedCount}, prods ${prods}`);
+  report.push(`Lv${level} [${MODE}]: ${result} / cap ${cap}s, placed ${placedCount}, prods ${prods}`);
   console.log(report[report.length - 1]);
   await page.screenshot({ path: `${OUT}/autoplay_lv${level}.png` });
   await page.waitForFunction(() => window.__game.scene.isActive('Result'), null, { timeout: 10000 });
