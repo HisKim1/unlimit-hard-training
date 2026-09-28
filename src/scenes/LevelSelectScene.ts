@@ -53,7 +53,7 @@ export class LevelSelectScene extends Phaser.Scene {
       const iconX0 = (W - 60) / 2 - 40;
       const iconsLeft = iconX0 - (n - 1) * iconStep - iconSize / 2;
       const descX = -(W - 60) / 2 + 24;
-      const desc = this.add.text(descX, 2, w.emom ? `🔔 EMOM · ${w.original}` : w.original, {
+      const desc = this.add.text(descX, 2, w.emom ? `🔔 ${w.original.startsWith('EMOM') ? '' : 'EMOM · '}${w.original}` : w.original, {
         fontFamily: FONT, fontSize: '21px', color: unlocked ? '#c9d4e0' : '#555',
         wordWrap: { width: Math.min(W - 250, iconsLeft - 12 - descX), useAdvancedWrap: true }, lineSpacing: 2,
       }).setOrigin(0, 0.5);

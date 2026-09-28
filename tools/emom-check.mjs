@@ -97,6 +97,19 @@ try {
   await tapProd(5);
   await page.waitForFunction(() => window.__game.scene.getScene('Game').noRep?.count === 1);
   const seen = new Set([await game((s) => s.toast.text.text)]);
+  // 노랩 진행 중 재촉이 chimpRoll 을 태워도(onProd 안에서 rollChimp 스킵) 노랩 펄스·진행도가 방해받지 않아야 함
+  const progressBefore = await game((s) => [...s.progress.done]);
+  const chimpForced = await game((s) => {
+    const original = s.chimpRoll;
+    s.chimpRoll = () => 0;
+    s.brain.lastProdMs = -Infinity;
+    try { s.onProd(); } finally { s.chimpRoll = original; }
+    return s.toast.text.text;
+  });
+  await page.waitForFunction(() => (window.__game.scene.getScene('Game').noRep?.count ?? 0) >= 2);
+  const afterChimpForce = await game((s) => ({ toast: s.toast.text.text, done: [...s.progress.done] }));
+  assert.ok(afterChimpForce.toast.includes('노랩!'), `chimp roll during no-rep must not swallow 노랩 pulse: forced=${JSON.stringify(chimpForced)} after=${JSON.stringify(afterChimpForce.toast)}`);
+  assert.deepEqual(afterChimpForce.done, progressBefore, 'no forget during no-rep chimp roll');
   const noRepFrozen = await game((s) => { s.setPaused(true); return s.noRep.count; });
   await page.waitForTimeout(1200);
   assert.equal(await game((s) => s.noRep.count), noRepFrozen, 'no-rep pauses');

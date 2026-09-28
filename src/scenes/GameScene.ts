@@ -247,7 +247,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.prodFeedback();
-    this.rollChimp();
+    if (!this.noRep) this.rollChimp();
   }
 
   /** 재촉 버튼 눌림·소리·진동·찰싹 이펙트 */
